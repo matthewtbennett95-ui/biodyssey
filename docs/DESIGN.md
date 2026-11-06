@@ -28,8 +28,8 @@ The owner asked for a site that *safely* lets students travel through biology. T
 7. **No dead ends:** every page links back to the map, and Back always works.
 8. **Content check** before every release, and a plain-language [Safety and privacy](../privacy.html) page for families and administrators.
 
-### 1. The map: a journey through scale
-The odyssey zooms out through the levels of organization (molecules → cells → populations, with organisms and ecosystems to come). It is a vertical route with a scale rail, which reads the same on a phone and a Chromebook. Only levels with worlds are shown.
+### 1. The map: the AP Biology course (updated in session 2)
+*Session 1 chose a journey through scale. Session 2 (owner's request) changed it to the AP Biology course framework.* The route shows all eight AP units in order, and each world sits under its unit. Units without a world yet are one faint line ("World coming"). Worlds aim at AP Biology first and also list GSE/NGSS standards, so regular Biology classes can use them too (simplify later rather than expand). Full discussion: [`focus-groups/02-ap-order-and-signal-siege.md`](focus-groups/02-ap-order-and-signal-siege.md).
 
 ### 2. Progression: free choice
 No locks between worlds; the map's order is the suggested route. Each world has **one goal** (green check) and **one stretch goal** (amber star). A world is complete when its goal is reached. No points across worlds and no rankings. The home page's one primary button continues the last unfinished world.
@@ -47,11 +47,11 @@ One notebook per world with two or three prompts, opened from **Notes** in the w
 A **Teacher guide** page: the worlds with time, topics, standards and goals, a **Copy link** per world for Classroom, how to run a period, and how work is turned in (PDF printouts and save codes). Symbio keeps its own Teacher tab and teacher mode. A Google Sheets turn-in stays on the Later list, because it would send data.
 
 ### 7. The worlds
-| # | Level | World | Status |
-| --- | --- | --- | --- |
-| 1 | Molecules | **Codon Rush** (replication, transcription, translation) | Live |
-| 2 | Cells | **Signal Siege** (cell communication, immune defense) | Coming soon: see below |
-| 3 | Populations | **Symbio** (the evolution of cooperation) | Live |
+| AP unit | World | Status |
+| --- | --- | --- |
+| 4. Cell Communication and Cell Cycle | **Signal Siege** (signaling, quorum sensing, feedback) | Live (rebuilt in session 2) |
+| 6. Gene Expression and Regulation | **Codon Rush** (replication, transcription, translation) | Live |
+| 8. Ecology (with Unit 7) | **Symbio** (the evolution of cooperation) | Live |
 
 ### Codon Rush goal calibration
 Simulated 20,000 rounds per player type (time per base and per codon, error rates):
@@ -68,18 +68,46 @@ An 85% goal let rushing players through too often (82% within 3 rounds), and a "
 ### Symbio as a world
 Symbio now lives in `worlds/symbio/`. Its data moved to `biodyssey.symbio.*`. Students who used the old Symbio site keep their progress, because both sites share one web address (matthewtbennett95-ui.github.io), so the first visit copies it over (teacher mode excluded). Old `SYMBIO-SAVE:` codes still restore. Goal: all 8 Expedition chapters. Stretch: 9+ on the Check-in Quiz. Changes from the original: self-hosted fonts, the security policy, Symbio's Save/Load buttons open the Biodyssey backup window, and the Facebook backup video link was removed.
 
-### Signal Siege: waiting on files
-The uploaded `incoming/signal_siege.html` can't run by itself: its building list, signals and settings come from a Google Apps Script server (`Code.gs`) or a preview data file, neither of which was uploaded. Bringing it in needs:
-1. The owner uploads the rest of the project (`Code.gs`, the preview/mock data file, `teacher.html`).
-2. Remove the student-number login, roster check, server saving, answer logging and leaderboard. Save through `Biodyssey.store` instead.
-3. Restyle to the design system (it currently uses its own dark theme and fonts), calibrate its goals by simulation, run the content check, and decide whether it fits regular Biology or only AP.
+### Signal Siege (rebuilt in session 2)
+Build a lymph node, then raid infection sites, in the base-building strategy genre (original names, art and look). Code: `worlds/signal-siege/engine.js` (rules, also used by the simulations) and `game.js` (drawing and screens). The original upload is kept in `_archive/incoming/`.
+- **Base:** cells work only when they receive their signal. Fibroblasts send growth factor (paracrine, 2 tiles) to respiring cells, which make ATP. Dendritic cells present antigen to helper T cells by touch (juxtacrine), and helper T cells activate B cells and killer T barracks by touch. A pancreatic islet sends insulin to every respiring cell (endocrine). Macrophage posts give Chemokine signals, B cells give Antibodies, and regulatory T cells give IL-10.
+- **Raids:** neutrophils (fast, cheap, short-lived), macrophages (tough, target toxin colonies) and killer T cells (destroy infected cells). Quorum hubs send autoinducer to toxin colonies, whose toxins only fire while they receive it. The hub's reach grows during the raid (positive feedback). Capsules resist phagocytes unless antibodies tag them. Inflammation rises faster the higher it gets, and above the threshold a cytokine storm damages your own cells. IL-10 slows it (negative feedback).
+- **Stars:** quorum hubs destroyed, 50% cleared, 100% cleared. Each new star pays bonus ATP. Replays pay half loot.
+
+**Balance.** Simulated raids per site with the army and signals a student would have by then.
+
+| Site | Careless, one try (≥1 star) | Careful, 3 tries (≥1 star) | Careful, 3 tries (3 stars) |
+| --- | --- | --- | --- |
+| Splinter | 88% | 100% | 100% |
+| Scraped knee | 57% | 100% | 93% |
+| Strep throat | 100% | 100% | 100% |
+| Sinus infection | 0% | 100% | 53% |
+| Pneumonia | 22% | 100% | 100% |
+| Flu, then bacteria | 42% | 100% | 53% |
+| Wound biofilm | 32% | 100% | 100% |
+| Sepsis | 28% | 100% | 35% |
+
+"Careless" sends only neutrophils, all at once, from a random side. "Careful" reads the map (attacks from the side with the easiest path), sends macrophages first and neutrophils in two waves, tags capsules, and uses chemokine on the hub. After a loss it tries a different side. So the **goal** (a star on every site) is reachable for a careful player, and a careless one stalls by Sinus. The **stretch** (all 24 stars) comes out at about 9% for a careful player allowed three tries per site, so it takes practice and experimenting. Players who try every approach per site reach it.
+
+**Economy.** A careful student walking the campaign (building what each site needs, two raids per site) reaches Sepsis after about 50 minutes of play, so the goal fits in one or two class periods.
 
 ### Open questions for next time
-- Should Signal Siege be AP-only, or have a Standard level?
-- Which world comes next for Organisms and Ecosystems?
+- Signal Siege: bring back a "defend your lymph node" mode as a later day? Add G protein toxin sites (Topic 4.4)?
+- Which worlds come next for AP Units 1, 2, 3, 5 and 7?
 - Should the old Symbio site link to Biodyssey (a "Symbio has moved" banner)?
 
 ## Content check log
+**Round 2 (November 6, 2026): Signal Siege.**
+- *Quorum sensing:* bacteria release autoinducers and switch on shared genes (including virulence factors and biofilm formation) once the signal is strong enough (Miller and Bassler 2001, *Annu. Rev. Microbiol.*; Rutherford and Bassler 2012, *Cold Spring Harb. Perspect. Med.*). Autoinducer raises its own production, which is positive feedback (Fuqua, Winans and Greenberg 1994, *J. Bacteriol.*). Toxins under quorum control are real: *Staphylococcus aureus* regulates toxins through its *agr* quorum system. Quorum sensing is an AP Topic 4.1 example.
+- *Contact signaling between immune cells* (dendritic cell → helper T cell → B cell and killer T cell) is an AP Topic 4.1 example. Helper T cells activate B cells through CD40L contact plus cytokines (Janeway's *Immunobiology*).
+- *Opsonization:* capsules (e.g., *Streptococcus pneumoniae*, the pneumonia site) resist phagocytosis, and antibody coating speeds it up (Janeway's *Immunobiology*).
+- *Chemokines:* IL-8 (CXCL8) recruits neutrophils by chemotaxis (Baggiolini 1998, *Nature*). Neutrophils are short-lived (Summers et al. 2010, *Trends Immunol.*); the game compresses their hours into seconds.
+- *Feedback:* uncontrolled inflammation (cytokine storm) damages the host. IL-10 from regulatory T cells and other cells is anti-inflammatory (Saraiva and O'Garra 2010, *Nat. Rev. Immunol.*). Sepsis is life-threatening organ dysfunction caused by a dysregulated host response to infection (Singer et al. 2016, *JAMA*, Sepsis-3), so that site has the lowest storm threshold.
+- *Sites:* bacterial pneumonia often follows influenza (McCullers 2014, *Nat. Rev. Microbiol.*); chronic wounds harbor biofilms (James et al. 2008, *Wound Repair Regen.*).
+- *Base:* growth factors signal through receptor tyrosine kinases (paracrine); insulin travels in the blood (endocrine) and increases glucose uptake. "Makes 50% more ATP" is a stated game simplification.
+- *Simplifications, stated in the game's wording:* a "quorum hub" stands for a dense cluster releasing autoinducer; infected cells "barely" take phagocyte damage (killer T and NK cells are the main killers).
+- *Appropriateness:* no gore ("destroy," not graphic language). No names, rankings or leaderboards. The old version's student-number login, roster, answer logging and leaderboard were removed.
+
 **Round 1 (November 6, 2026).**
 - *Codon Rush, fixed:* Replication mode built the new strand in the 3′→5′ direction. DNA polymerase only adds nucleotides to a 3′ end, so new strands grow 5′→3′ (Kornberg's work on DNA polymerase; any intro text such as Campbell Biology, ch. 16). The parent strand is now shown 3′→5′ and the new strand 5′→3′, and the directions say so.
 - *Codon Rush, checked and accurate:* the standard genetic code table (all 64 codons, AUG start, UAA/UAG/UGA stop); template strand read 3′→5′ while mRNA is built 5′→3′; base pairing (A–U in RNA, A–T in DNA); stop codons are recognized by release factors rather than tRNA; proteins grow from the N- to the C-terminus.

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Signal Siege · Biodyssey</title>
+<meta name="description" content="Build a lymph node whose cells signal each other, then raid infections with immune cells.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='8' cy='23.5' r='2' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.8' r='3' fill='%23fff'/%3E%3Ccircle cx='23.6' cy='9.6' r='4.2' fill='none' stroke='%236ee7b7' stroke-width='2.2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../core/biodyssey.css">
+<link rel="stylesheet" href="siege.css">
+</head>
+<body class="bd ss-body">
+<main class="bd-main ss">
+
+  <!-- ============ Your lymph node ============ -->
+  <section id="home" class="ss-screen">
+    <div class="ss-head">
+      <div class="ss-titles">
+        <div class="bd-kicker">Unit 4 · Cell Communication</div>
+        <h1 class="ss-h1">Signal Siege</h1>
+      </div>
+      <div class="ss-stats" aria-label="Your resources">
+        <div class="ss-stat atp"><span class="ss-stat-k">ATP</span><b><span id="hAtp">0</span><em> / <span id="hCap">0</span></em></b><div class="ss-meter" aria-hidden="true"><i id="atpFill"></i></div><small id="hRate"></small></div>
+        <div class="ss-stat"><span class="ss-stat-k">Army</span><b id="hArmy">0/0</b></div>
+        <div class="ss-stat"><span class="ss-stat-k">Stars</span><b id="hStars">0/24</b></div>
+      </div>
+    </div>
+    <div class="ss-stage">
+      <canvas id="baseCv" aria-label="Your lymph node. Tap a cell to see what signal it needs."></canvas>
+      <div class="ss-info" id="info" hidden aria-live="polite"></div>
+      <div class="ss-placebar" id="placeBar" hidden><div id="placeText" class="ss-place-text"></div>
+        <button class="bd-btn ghost" type="button" id="placeCancel">Cancel</button><button class="bd-btn" type="button" id="placeOk">Place</button></div>
+    </div>
+    <div class="ss-dock" id="dock">
+      <button class="bd-btn secondary" type="button" id="buildBtn"><svg class="bd-ic" aria-hidden="true"><use href="#bdi-plus"/></svg>Build</button>
+      <button class="bd-btn secondary" type="button" id="armyBtn"><svg class="bd-ic" aria-hidden="true"><use href="#bdi-users"/></svg>Army</button>
+      <button class="bd-btn ghost" type="button" id="howBtn">How it works</button>
+      <span class="ss-grow"></span>
+      <button class="bd-btn lg ss-raid" type="button" id="raidBtn"><svg class="bd-ic" aria-hidden="true"><use href="#bdi-target"/></svg>Raid</button>
+    </div>
+  </section>
+
+  <!-- ============ Battle ============ -->
+  <section id="battle" class="ss-screen" hidden>
+    <div class="ss-bhud">
+      <div class="ss-bstat"><span class="ss-stat-k">Time</span><b id="bTime" class="mono">2:00</b></div>
+      <div class="ss-bstat"><span class="ss-stat-k">Cleared</span><b id="bPct" class="mono">0%</b></div>
+      <div class="ss-bstat"><span class="ss-stat-k">Stars</span><span class="ss-stars" id="bStars"></span></div>
+      <div class="ss-bstat"><span class="ss-stat-k">ATP</span><b id="bLoot" class="mono">0</b></div>
+      <span class="ss-grow"></span>
+      <button class="bd-btn ghost" type="button" id="bEnd">End raid</button>
+    </div>
+    <div class="ss-infl" id="inflBar"><span id="inflLabel">Inflammation</span><div class="ss-meter" aria-hidden="true"><i id="inflFill"></i></div></div>
+    <div class="ss-stage battle">
+      <canvas id="battleCv" aria-label="The infection site. Tap to send in the selected cell or signal."></canvas>
+      <div class="ss-sitename" id="bSite"></div>
+      <div class="ss-banner" id="bBanner" role="status" hidden></div>
+    </div>
+    <div class="ss-deploy" id="deploy" aria-label="Your army and signals"></div>
+    <p class="ss-hint" id="pickHint"></p>
+  </section>
+</main>
+
+<!-- Build and Army -->
+<dialog class="bd-sheet ss-dialog" id="sheet" aria-labelledby="sheetTitle">
+  <div class="bd-sheet-head"><div><h2 class="bd-h2" id="sheetTitle">Build</h2><p class="bd-small" id="sheetSub"></p></div>
+    <button class="bd-close" type="button" data-close-dialog aria-label="Close"><svg class="bd-ic lg" aria-hidden="true"><use href="#bdi-x"/></svg></button></div>
+  <div class="bd-sheet-body" id="sheetBody"></div>
+</dialog>
+
+<!-- Choose an infection / scout -->
+<dialog class="bd-modal ss-dialog ss-wide" id="raidDlg" aria-labelledby="raidTitle">
+  <div class="bd-modal-head"><button class="bd-btn ghost ss-back" type="button" id="raidBack" hidden><svg class="bd-ic" aria-hidden="true"><use href="#bdi-arrow-left"/></svg>All sites</button>
+    <h2 id="raidTitle">Choose an infection</h2>
+    <button class="bd-close" type="button" data-close-dialog aria-label="Close"><svg class="bd-ic lg" aria-hidden="true"><use href="#bdi-x"/></svg></button></div>
+  <div class="bd-modal-body" id="raidBody"></div>
+</dialog>
+
+<!-- Results -->
+<dialog class="bd-modal ss-results" id="results" aria-labelledby="resTitle">
+  <div class="bd-modal-body">
+    <div class="ss-res-stars" id="resStars"></div>
+    <h2 id="resTitle" class="ss-res-title"></h2>
+    <div class="ss-res-nums" id="resNums"></div>
+    <div class="bd-label">What happened</div>
+    <ul class="ss-lessons" id="resLessons"></ul>
+    <div class="ss-check" id="resCheck"></div>
+    <div class="bd-actions ss-res-actions">
+      <button class="bd-btn lg" type="button" id="resHome">Back to lymph node</button>
+      <button class="bd-btn secondary" type="button" id="resAgain">Train and raid again</button>
+      <button class="bd-btn ghost" type="button" id="resPrint"><svg class="bd-ic" aria-hidden="true"><use href="#bdi-printer"/></svg>Print</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- How it works -->
+<dialog class="bd-modal ss-dialog" id="how" aria-labelledby="howTitle">
+  <div class="bd-modal-head"><h2 id="howTitle">How Signal Siege works</h2>
+    <button class="bd-close" type="button" data-close-dialog aria-label="Close"><svg class="bd-ic lg" aria-hidden="true"><use href="#bdi-x"/></svg></button></div>
+  <div class="bd-modal-body">
+    <ol class="ss-how">
+      <li><b>Wire up your lymph node.</b> A cell only works when it receives the signal it needs. Tap any cell to see what it's missing.</li>
+      <li><b>Train an army.</b> Neutrophils are fast and cheap. Macrophages are tough. Killer T cells destroy infected cells.</li>
+      <li><b>Raid an infection.</b> Tap the board to send cells in. Bacteria use quorum sensing: destroy a <b>quorum hub</b> and the toxin colonies that hear it go silent.</li>
+      <li><b>Earn stars.</b> One for the quorum hubs, one for 50% destroyed, one for clearing it all. Watch inflammation: too much at once causes a cytokine storm.</li>
+    </ol>
+    <button class="bd-btn lg block" type="button" id="howGo">Let's go</button>
+  </div>
+</dialog>
+
+<script src="../registry.js"></script>
+<script src="../../core/biodyssey.js"></script>
+<script>Biodyssey.page({ world: 'signal-siege', footer: false });</script>
+<script src="engine.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
