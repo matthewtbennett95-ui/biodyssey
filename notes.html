@@ -36,7 +36,7 @@
 (function () {
   const B = Biodyssey, esc = B.esc, icon = B.icon;
   B.page();
-  const worlds = B.worlds.filter(w => w.status === 'open');
+  const worlds = B.worlds.filter(w => w.status === 'open').sort((a, b) => a.unit - b.unit);
   const list = document.getElementById('list');
 
   function goalLine(w) {
@@ -49,7 +49,7 @@
       const text = B.notes.get(w.id);
       html += `<section class="bd-card nb" aria-labelledby="h-${w.id}">
         <div class="nb-head"><span class="nb-art" style="background:${esc(w.tint)}" aria-hidden="true">${w.art}</span>
-          <h2 id="h-${w.id}">World ${w.n}: ${esc(w.title)}</h2>${goalLine(w)}
+          <h2 id="h-${w.id}">Unit ${w.unit}: ${esc(w.title)}</h2>${goalLine(w)}
           <button class="bd-btn secondary" type="button" data-edit="${w.id}" id="edit-${w.id}">${icon('notes')}${text.trim() ? 'Edit' : 'Write'}</button></div>
         ${text.trim() ? `<div class="nb-text"></div>` : '<p class="nb-empty">No notes yet. Tap Write, or use Notes in the top bar while you play.</p>'}
       </section>`;
@@ -67,7 +67,7 @@
     let h = B.docHead('Biodyssey study guide', 'My notes from each world');
     worlds.forEach(w => {
       const p = B.progress.get(w.id) || {}, text = B.notes.get(w.id).trim();
-      h += `<div class="section"><h2>World ${w.n}: ${esc(w.title)}</h2>
+      h += `<div class="section"><h2>Unit ${w.unit}: ${esc(w.title)}</h2>
         <p><b>Goal:</b> ${p.goal ? 'reached' : 'not yet'}. <b>Stretch goal:</b> ${p.stretch ? 'reached' : 'not yet'}.</p>
         <h3>Questions to answer</h3><ol>${w.prompts.map(q => '<li>' + esc(q) + '</li>').join('')}</ol>
         <h3>My notes</h3>${text ? '<div class="note">' + esc(text) + '</div>' : '<div class="lines"></div>'.repeat(6)}</div>`;

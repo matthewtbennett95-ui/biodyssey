@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Biodyssey · A journey through the worlds of biology</title>
-<meta name="description" content="Free classroom biology games. Travel from molecules to populations, one world at a time.">
+<meta name="description" content="Free classroom biology games, one world for each unit of AP Biology.">
 <meta name="theme-color" content="#4f46e5">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='8' cy='23.5' r='2' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.8' r='3' fill='%23fff'/%3E%3Ccircle cx='23.6' cy='9.6' r='4.2' fill='none' stroke='%236ee7b7' stroke-width='2.2'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="core/biodyssey.css">
@@ -31,6 +31,12 @@
   .level:first-child::before { top: 4px; }
   .level b { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--bd-ink); }
   .level span { font-size: 13px; color: var(--bd-muted); }
+  .level.empty { padding-top: var(--s2); }
+  .level.empty b, .level.empty span { color: var(--bd-faint); }
+  .level.empty::before { border-color: var(--bd-line-2); width: 10px; height: 10px; left: 15px; top: calc(var(--s2) + 6px); }
+  .level.empty:first-child::before { top: 6px; }
+  .level em { font-style: normal; font-size: 12px; color: var(--bd-faint); margin-left: auto; }
+  @media (max-width: 640px) { .level.empty::before { left: 11px; } .level { flex-wrap: wrap; row-gap: 0; } }
 
   .marker { position: absolute; left: 4px; top: 30px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
     background: var(--bd-surface); border: 2px solid var(--bd-line-2); color: var(--bd-muted); font-weight: 700; font-size: 14px; z-index: 1; }
@@ -80,8 +86,8 @@
   <div class="bd-page">
     <header class="bd-header hero">
       <div class="bd-kicker">Your odyssey</div>
-      <h1 class="bd-h1">Zoom out through biology.</h1>
-      <p class="bd-goal">Each world is a game about one level of life. Start small with molecules and work your way up.</p>
+      <h1 class="bd-h1">Play your way through biology.</h1>
+      <p class="bd-goal">One world for each unit of AP Biology, in course order. Start wherever your class is.</p>
       <div class="bd-actions">
         <a class="bd-btn lg" id="primary" href="#">Start</a>
         <button class="bd-btn ghost" type="button" id="how-btn" aria-expanded="false" aria-controls="how">How it works</button>
@@ -98,7 +104,7 @@
       <div class="grow"><span id="nudge-text">Your progress isn't backed up yet.</span> <button class="bd-link" type="button" id="nudge-btn">Back up now</button></div>
     </div>
 
-    <ol class="route" id="route" aria-label="Worlds, from smallest to largest"></ol>
+    <ol class="route" id="route" aria-label="Worlds, in AP Biology unit order"></ol>
   </div>
 </main>
 
@@ -110,19 +116,18 @@
   B.page();
 
   const last = B.store.get('last', null);
-  const open = B.worlds.filter(w => w.status === 'open');
+  const open = B.worlds.filter(w => w.status === 'open').sort((a, b) => a.unit - b.unit);
   const route = document.getElementById('route');
 
   function render() {
     let html = '';
-    B.levels.forEach(level => {
-      const ws = B.worlds.filter(w => w.level === level.id);
-      if (!ws.length) return;
-      html += `<li class="level"><b>${esc(level.name)}</b><span>${esc(level.size)}</span></li>`;
+    B.units.forEach(unit => {
+      const ws = B.worlds.filter(w => w.unit === unit.n);
+      html += `<li class="level${ws.length ? '' : ' empty'}"><b>Unit ${unit.n}</b><span>${esc(unit.name)}</span>${ws.length ? '' : '<em>World coming</em>'}</li>`;
       ws.forEach(w => {
         const soon = w.status !== 'open';
         const st = soon ? 'soon' : B.worldState(w.id);
-        const marker = soon ? icon('lock') : st === 'goal' ? icon('check') : st === 'stretch' ? icon('star') : w.n;
+        const marker = soon ? icon('lock') : st === 'goal' ? icon('check') : st === 'stretch' ? icon('star') : w.unit;
         const chips = [];
         if (soon) chips.push('<span class="bd-chip line">Coming soon</span>');
         else {
@@ -132,14 +137,13 @@
           if (w.id === last) chips.push(`<span class="bd-chip line">${icon('pin')}You were here</span>`);
         }
         const inner = `<span class="art" style="background:${esc(w.tint)}" aria-hidden="true">${w.art}</span>
-          <span class="wbody"><span class="wtop">World ${w.n}</span><h2>${esc(w.title)}</h2><p>${esc(w.goal)}</p>
+          <span class="wbody"><h2>${esc(w.title)}</h2><p>${esc(w.goal)}</p>
             <span class="wmeta"><span class="time">${icon('clock')}${esc(w.time)}</span>${chips.join('')}</span></span>
           ${soon ? '' : `<span class="go">${icon('chevron-right', 'lg')}</span>`}`;
         html += `<li class="st-${st}" id="w-${w.id}"><span class="marker" aria-hidden="true">${marker}</span>
           ${soon ? `<div class="world" aria-label="${esc(w.title)}: coming soon">${inner}</div>` : `<a class="world" id="go-${w.id}" href="${esc(w.path)}">${inner}</a>`}</li>`;
       });
     });
-    html += '<li class="end">More worlds are on the way: organisms, ecosystems and the biosphere.</li>';
     route.innerHTML = html;
   }
   render();

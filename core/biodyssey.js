@@ -37,9 +37,9 @@
 
   /* ---------- Worlds ---------- */
   const WORLDS = window.BIODYSSEY_WORLDS || [];
-  const LEVELS = window.BIODYSSEY_LEVELS || [];
+  const UNITS = window.BIODYSSEY_UNITS || [];
   const worldInfo = id => WORLDS.find(w => w.id === id) || null;
-  const levelInfo = id => LEVELS.find(l => l.id === id) || { name: '' };
+  const unitInfo = n => UNITS.find(u => u.n === n) || { n, name: '' };
 
   /* ---------- Progress ---------- */
   const listeners = [];
@@ -134,7 +134,10 @@
     'link': '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
     'map': '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
     'refresh': '<path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/>',
-    'pin': '<path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>'
+    'pin': '<path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
+    'plus': '<path d="M12 5v14M5 12h14"/>',
+    'users': '<circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 3.1a4 4 0 0 1 0 7.8M21 21v-2a4 4 0 0 0-3-3.9"/>',
+    'target': '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'
   };
   function icon(name, cls) { return `<svg class="bd-ic${cls ? ' ' + cls : ''}" aria-hidden="true" focusable="false"><use href="#bdi-${name}"/></svg>`; }
   const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><use href="#bd-logo"/></svg>`;
@@ -426,7 +429,7 @@
     bar.className = 'bd-bar';
     bar.innerHTML = `<a class="bd-skip" href="#main">Skip to content</a><div class="bd-bar-in">
       ${w ? `<a class="bd-btn ghost" href="${home}" id="bd-back">${icon('arrow-left')}Odyssey</a>
-             <div class="bd-bar-title"><span>World ${w.n} · ${esc(levelInfo(w.level).name)}</span><b>${esc(w.title)}</b></div>`
+             <div class="bd-bar-title"><span>Unit ${w.unit} · ${esc(unitInfo(w.unit).name)}</span><b>${esc(w.title)}</b></div>`
           : `<a class="bd-brand" href="${home}" aria-label="Biodyssey home">${LOGO}<span>Biodyssey</span></a>`}
       <span class="bd-bar-spacer"></span>
       ${w ? `<button class="bd-btn ghost" type="button" id="bd-notes-btn">${icon('notes')}Notes</button>`
@@ -467,7 +470,7 @@
 
   window.Biodyssey = {
     ROOT, esc, icon, store, scoped, progress, notes, name, toast, print, docHead, page,
-    worlds: WORLDS, levels: LEVELS, worldInfo, levelInfo, worldState, hasProgress, backupNeeded, ago,
+    worlds: WORLDS, units: UNITS, worldInfo, unitInfo, worldState, hasProgress, backupNeeded, ago,
     openBackup, openNotes, refreshBackupState,
     backup: { pack, code: saveCode, parse: parseBackup, restore: restoreBackup },
     // The world contract: what a world gets to work with.

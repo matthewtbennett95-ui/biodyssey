@@ -16,7 +16,7 @@
     <header class="bd-header">
       <div class="bd-kicker">Teacher guide</div>
       <h1 class="bd-h1">Teaching with Biodyssey</h1>
-      <p class="bd-goal">Free biology games, one world per unit. No accounts or setup.</p>
+      <p class="bd-goal">Free biology games in AP Biology unit order. No accounts or setup.</p>
     </header>
     <div class="bd-stack" style="gap:var(--s6)">
       <section class="bd-stack">
@@ -57,10 +57,10 @@
 (function () {
   const B = Biodyssey;
   B.page();
-  const esc = B.esc, icon = B.icon, L = id => B.levelInfo(id).name;
-  const rows = B.worlds.map(w => {
+  const esc = B.esc, icon = B.icon, L = n => B.unitInfo(n).name;
+  const rows = B.worlds.slice().sort((a, b) => a.unit - b.unit).map(w => {
     const open = w.status === 'open';
-    return `<tr><td><b>World ${w.n}: ${esc(w.title)}</b><br><span class="bd-small">${esc(L(w.level))} · ${esc(w.time)}</span></td>
+    return `<tr><td><b>Unit ${w.unit}: ${esc(w.title)}</b><br><span class="bd-small">${esc(L(w.unit))} · ${esc(w.time)}</span></td>
       <td>${esc(w.topics)}<br><span class="bd-small">${w.standards.map(esc).join(' · ')}</span></td>
       <td>${open ? `<span class="bd-small"><b>Goal:</b> ${esc(w.goals.goal)}.<br><b>Stretch:</b> ${esc(w.goals.stretch)}.</span>` : '<span class="bd-chip line">Coming soon</span>'}</td>
       <td>${open ? `<button class="bd-btn secondary" type="button" id="copy-${w.id}" data-url="${esc(new URL(w.path, B.ROOT).href)}">${icon('link')}Copy link</button>` : ''}</td></tr>`;
