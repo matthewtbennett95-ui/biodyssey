@@ -49,7 +49,7 @@ A **Teacher guide** page: the worlds with time, topics, standards and goals, a *
 ### 7. The worlds
 | AP unit | World | Status |
 | --- | --- | --- |
-| 4. Cell Communication and Cell Cycle | **Signal Siege** (signaling, quorum sensing, feedback) | Live (rebuilt in session 2) |
+| 4. Cell Communication and Cell Cycle | **Signal Siege** (signaling, quorum sensing, feedback) | Live (boot camp, session 3) |
 | 6. Gene Expression and Regulation | **Codon Rush** (replication, transcription, translation) | Live |
 | 8. Ecology (with Unit 7) | **Symbio** (the evolution of cooperation) | Live |
 
@@ -68,35 +68,42 @@ An 85% goal let rushing players through too often (82% within 3 rounds), and a "
 ### Symbio as a world
 Symbio now lives in `worlds/symbio/`. Its data moved to `biodyssey.symbio.*`. Students who used the old Symbio site keep their progress, because both sites share one web address (matthewtbennett95-ui.github.io), so the first visit copies it over (teacher mode excluded). Old `SYMBIO-SAVE:` codes still restore. Goal: all 8 Expedition chapters. Stretch: 9+ on the Check-in Quiz. Changes from the original: self-hosted fonts, the security policy, Symbio's Save/Load buttons open the Biodyssey backup window, and the Facebook backup video link was removed.
 
-### Signal Siege (rebuilt in session 2)
-Build a lymph node, then raid infection sites, in the base-building strategy genre (original names, art and look). Code: `worlds/signal-siege/engine.js` (rules, also used by the simulations) and `game.js` (drawing and screens). The original upload is kept in `_archive/incoming/`.
-- **Base:** cells work only when they receive their signal. Fibroblasts send growth factor (paracrine, 2 tiles) to respiring cells, which make ATP. Dendritic cells present antigen to helper T cells by touch (juxtacrine), and helper T cells activate B cells and killer T barracks by touch. A pancreatic islet sends insulin to every respiring cell (endocrine). Macrophage posts give Chemokine signals, B cells give Antibodies, and regulatory T cells give IL-10.
-- **Raids:** neutrophils (fast, cheap, short-lived), macrophages (tough, target toxin colonies) and killer T cells (destroy infected cells). Quorum hubs send autoinducer to toxin colonies, whose toxins only fire while they receive it. The hub's reach grows during the raid (positive feedback). Capsules resist phagocytes unless antibodies tag them. Inflammation rises faster the higher it gets, and above the threshold a cytokine storm damages your own cells. IL-10 slows it (negative feedback).
-- **Stars:** quorum hubs destroyed, 50% cleared, 100% cleared. Each new star pays bonus ATP. Replays pay half loot.
+### Signal Siege: plan, run, explain (session 3)
+*Session 2 built a real-time raid game. On the owner's iPhone it felt wrong (banners over the board, tiny targets), so session 3 ([focus group](focus-groups/03-signal-siege-boot-camp.md)) compared genres with a second class and chose lane puzzles.*
 
-**Balance.** Simulated raids per site with the army and signals a student would have by then.
+You place immune cells on a 5 × 7 board, press **Run**, and bacteria come down the lanes toward your tissue. Runs are deterministic. A coach panel beside the board (above it on phones) gives instructions, live explanations and results, and **never covers the board**. Code: `worlds/signal-siege/engine.js` (rules), `levels.js` (boot camp) and `game.js` (screens). The raid version is in git history; the original upload is in `_archive/incoming/`.
 
-| Site | Careless, one try (≥1 star) | Careful, 3 tries (≥1 star) | Careful, 3 tries (3 stars) |
-| --- | --- | --- | --- |
-| Splinter | 88% | 100% | 100% |
-| Scraped knee | 57% | 100% | 93% |
-| Strep throat | 100% | 100% | 100% |
-| Sinus infection | 0% | 100% | 53% |
-| Pneumonia | 22% | 100% | 100% |
-| Flu, then bacteria | 42% | 100% | 53% |
-| Wound biofilm | 32% | 100% | 100% |
-| Sepsis | 28% | 100% | 35% |
+- **Signals:** paracrine (within 2 squares: chemokine, IL-10), juxtacrine (cells that share an edge: antigen, T cell help) and endocrine (the whole board: epinephrine). Each working cell shows a green dot. Tapping a cell shows its reception → transduction → response steps.
+- **Boot camp:** 8 levels, one AP idea each (table in the focus group record). Level 1 is a step-by-step tutorial, and levels 1–2 pause the first run to explain.
+- **Stars:** stop the infection; no bacteria reach your tissue; and a lesson star (cheapest plan, never reach a quorum, or no cytokine storm). **Goal:** a star on all 8 levels. **Stretch:** all 24 stars.
 
-"Careless" sends only neutrophils, all at once, from a random side. "Careful" reads the map (attacks from the side with the easiest path), sends macrophages first and neutrophils in two waves, tags capsules, and uses chemokine on the hub. After a loss it tries a different side. So the **goal** (a star on every site) is reachable for a careful player, and a careless one stalls by Sinus. The **stretch** (all 24 stars) comes out at about 9% for a careful player allowed three tries per site, so it takes practice and experimenting. Players who try every approach per site reach it.
+**Balance: every layout tried.** For each level the checker ran every legal placement of the available cells and recorded the result.
 
-**Economy.** A careful student walking the campaign (building what each site needs, two raids per site) reaches Sepsis after about 50 minutes of play, so the goal fits in one or two class periods.
+| Level | Layouts | Win | 3 stars | Cheapest perfect plan |
+| --- | --- | --- | --- | --- |
+| 1. First contact | 16 | 31% | 31% | 50 ATP (any square in the lane) |
+| 2. Call for backup | 13 | 46% | 46% | 50 ATP |
+| 3. Out of reach | 277 | 45% | 2 layouts | 50 ATP (the one sweet spot) |
+| 4. Touch to talk | 2,773 | 4 layouts | 4 layouts | 110 ATP (the full contact chain) |
+| 5. Slippery capsules | 9,079 | 6 layouts | 6 layouts | 150 ATP (chain plus two B cells) |
+| 6. Through the blood | 29 | 48% | 48% | 60 ATP (the adrenal gland, anywhere) |
+| 7. Quorum | 11,371 | 59% | 1% (never reach a quorum) | 40 ATP wins, 3★ needs a high defense |
+| 8. Cytokine storm | 18,939 | 17% | 8.8% (no storm) | 40 ATP wins, 3★ needs IL-10 |
+
+An empty board loses every level. Levels 4 and 5 have very few answers, so their briefs give a hint, and the dots and signal lines show the chain working as you build it. The goal needs each level understood once. The stretch needs the efficient, lesson-perfect plan on all eight.
 
 ### Open questions for next time
-- Signal Siege: bring back a "defend your lymph node" mode as a later day? Add G protein toxin sites (Topic 4.4)?
+- Signal Siege: missions after boot camp (viruses and killer T cells; cholera and pertussis toxins for Topic 4.4)? A free-build sandbox? A real class playtest.
 - Which worlds come next for AP Units 1, 2, 3, 5 and 7?
 - Should the old Symbio site link to Biodyssey (a "Symbio has moved" banner)?
 
 ## Content check log
+**Round 3 (November 6, 2026): Signal Siege boot camp.** Carries over the round 2 sources (quorum sensing, contact signaling between immune cells, opsonization, chemokines, IL-10 and cytokine storms). New in this round:
+- *Epinephrine (endocrine):* catecholamines rapidly raise circulating neutrophils by releasing cells marginated along vessel walls (Benschop, Rodriguez-Feuerhahn and Schedlowski 1996, *Brain Behav. Immun.*). The game shows this as "twice as many neutrophils released" at every capillary. Epinephrine acting through a G protein-coupled receptor and cAMP is the classic AP Topic 4.3 example.
+- *Reception → transduction → response* text for each signal: chemokine receptors are G protein-coupled (CXCR1/2); T cell receptor signaling runs through a kinase cascade; CD40 on B cells is activated by CD40L on helper T cells; the IL-10 receptor signals through JAK/STAT kinases.
+- *Simplifications, stated in the game's wording:* signals have a fixed range of 2 squares; neutrophils live seconds, not hours; "double damage" stands for faster phagocytosis of tagged bacteria.
+- *Appropriateness:* no gore, no names or rankings, and losing is framed as "change my plan."
+
 **Round 2 (November 6, 2026): Signal Siege.**
 - *Quorum sensing:* bacteria release autoinducers and switch on shared genes (including virulence factors and biofilm formation) once the signal is strong enough (Miller and Bassler 2001, *Annu. Rev. Microbiol.*; Rutherford and Bassler 2012, *Cold Spring Harb. Perspect. Med.*). Autoinducer raises its own production, which is positive feedback (Fuqua, Winans and Greenberg 1994, *J. Bacteriol.*). Toxins under quorum control are real: *Staphylococcus aureus* regulates toxins through its *agr* quorum system. Quorum sensing is an AP Topic 4.1 example.
 - *Contact signaling between immune cells* (dendritic cell → helper T cell → B cell and killer T cell) is an AP Topic 4.1 example. Helper T cells activate B cells through CD40L contact plus cytokines (Janeway's *Immunobiology*).
