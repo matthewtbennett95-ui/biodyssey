@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='8' cy='23.5' r='2' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.8' r='3' fill='%23fff'/%3E%3Ccircle cx='23.6' cy='9.6' r='4.2' fill='none' stroke='%236ee7b7' stroke-width='2.2'/%3E%3C/svg%3E">
+<title>Teacher guide · Biodyssey</title>
+<link rel="stylesheet" href="core/biodyssey.css">
+</head>
+<body class="bd">
+<main class="bd-main">
+  <div class="bd-page">
+    <header class="bd-header">
+      <div class="bd-kicker">Teacher guide</div>
+      <h1 class="bd-h1">Teaching with Biodyssey</h1>
+      <p class="bd-goal">Free biology games, one world per unit. No accounts or setup.</p>
+    </header>
+    <div class="bd-stack" style="gap:var(--s6)">
+      <section class="bd-stack">
+        <h2 class="bd-h2">The worlds</h2>
+        <div class="bd-table-wrap"><table class="bd-table" id="worlds"></table></div>
+      </section>
+
+      <section class="bd-panel bd-prose">
+        <h2 style="margin-top:0">A class period</h2>
+        <ol>
+          <li>Post the world's link in Google Classroom (use <b>Copy link</b> above).</li>
+          <li>Students play. Each world shows its <b>goal</b> and a harder <b>stretch goal</b>.</li>
+          <li>Students write in <b>Notes</b> (top bar) using the prompts. All notes print together as a study guide.</li>
+          <li>Before the bell, students tap <b>Back up</b>, especially on Chromebooks that wipe data at sign-out.</li>
+        </ol>
+
+        <h2>Turning work in</h2>
+        <ul>
+          <li><b>Printouts:</b> each game's <b>Print my results</b>, and <b>My notes → Print study guide</b>. Students choose <b>Save as PDF</b> and attach it in Classroom.</li>
+          <li><b>Save codes:</b> if files are blocked, students copy a save code into a Google Doc or a private Classroom comment. Restoring a save code on any device brings everything back.</li>
+        </ul>
+
+        <h2>Answer guides and teacher tools</h2>
+        <ul>
+          <li><b>Codon Rush</b> checks every answer as students go, and its results list exactly what to review.</li>
+          <li><b>Symbio</b> has its own Teacher tab: a lesson plan, an answer guide, standards (Georgia CTAE and NGSS) and teacher mode.</li>
+        </ul>
+
+        <h2>Safety</h2>
+        <p>No accounts, no personal data, nothing sent anywhere, no student-to-student contact. The <a href="privacy.html">Safety and privacy</a> page is written so you can share it with families or administrators.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="worlds/registry.js"></script>
+<script src="core/biodyssey.js"></script>
+<script>
+(function () {
+  const B = Biodyssey;
+  B.page();
+  const esc = B.esc, icon = B.icon, L = id => B.levelInfo(id).name;
+  const rows = B.worlds.map(w => {
+    const open = w.status === 'open';
+    return `<tr><td><b>World ${w.n}: ${esc(w.title)}</b><br><span class="bd-small">${esc(L(w.level))} · ${esc(w.time)}</span></td>
+      <td>${esc(w.topics)}<br><span class="bd-small">${w.standards.map(esc).join(' · ')}</span></td>
+      <td>${open ? `<span class="bd-small"><b>Goal:</b> ${esc(w.goals.goal)}.<br><b>Stretch:</b> ${esc(w.goals.stretch)}.</span>` : '<span class="bd-chip line">Coming soon</span>'}</td>
+      <td>${open ? `<button class="bd-btn secondary" type="button" id="copy-${w.id}" data-url="${esc(new URL(w.path, B.ROOT).href)}">${icon('link')}Copy link</button>` : ''}</td></tr>`;
+  }).join('');
+  document.getElementById('worlds').innerHTML = `<thead><tr><th>World</th><th>Biology</th><th>Goals</th><th><span class="bd-sr">Link</span></th></tr></thead><tbody>${rows}</tbody>`;
+  document.querySelectorAll('[data-url]').forEach(b => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.url); B.toast('Link copied. Paste it into Google Classroom.', { icon: 'check-circle', kind: 'good' }); }
+    catch (e) { window.prompt('Copy this link:', b.dataset.url); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>My notes · Biodyssey</title>
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='8' cy='23.5' r='2' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.8' r='3' fill='%23fff'/%3E%3Ccircle cx='23.6' cy='9.6' r='4.2' fill='none' stroke='%236ee7b7' stroke-width='2.2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="core/biodyssey.css">
+<style>
+  .nb { display: flex; flex-direction: column; gap: var(--s3); }
+  .nb-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+  .nb-head h2 { font-size: 18px; font-weight: 700; flex: 1; min-width: 0; }
+  .nb-art { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; flex: none; }
+  .nb-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; color: var(--bd-ink); border-left: 3px solid var(--bd-brand-100); padding-left: var(--s4); max-height: 240px; overflow: auto; }
+  .nb-empty { font-size: 14px; color: var(--bd-muted); }
+</style>
+</head>
+<body class="bd">
+<main class="bd-main">
+  <div class="bd-page">
+    <header class="bd-header">
+      <div class="bd-kicker">Notes</div>
+      <h1 class="bd-h1">My notes</h1>
+      <p class="bd-goal">Everything you've written, in one place. Print it as a study guide.</p>
+      <div class="bd-actions"><button class="bd-btn lg" type="button" id="print-guide"><svg class="bd-ic" aria-hidden="true"><use href="#bdi-printer"/></svg>Print study guide</button></div>
+    </header>
+    <div class="bd-stack" id="list"></div>
+  </div>
+</main>
+<script src="worlds/registry.js"></script>
+<script src="core/biodyssey.js"></script>
+<script>
+(function () {
+  const B = Biodyssey, esc = B.esc, icon = B.icon;
+  B.page();
+  const worlds = B.worlds.filter(w => w.status === 'open');
+  const list = document.getElementById('list');
+
+  function goalLine(w) {
+    const p = B.progress.get(w.id) || {};
+    return (p.goal ? `<span class="bd-chip good">${icon('check')}Goal</span>` : '') + (p.stretch ? `<span class="bd-chip warn">${icon('star')}Stretch</span>` : '');
+  }
+  function render() {
+    let html = '';
+    worlds.forEach(w => {
+      const text = B.notes.get(w.id);
+      html += `<section class="bd-card nb" aria-labelledby="h-${w.id}">
+        <div class="nb-head"><span class="nb-art" style="background:${esc(w.tint)}" aria-hidden="true">${w.art}</span>
+          <h2 id="h-${w.id}">World ${w.n}: ${esc(w.title)}</h2>${goalLine(w)}
+          <button class="bd-btn secondary" type="button" data-edit="${w.id}" id="edit-${w.id}">${icon('notes')}${text.trim() ? 'Edit' : 'Write'}</button></div>
+        ${text.trim() ? `<div class="nb-text"></div>` : '<p class="nb-empty">No notes yet. Tap Write, or use Notes in the top bar while you play.</p>'}
+      </section>`;
+    });
+    list.innerHTML = html;
+    worlds.forEach(w => { const el = list.querySelector('#h-' + w.id).closest('section').querySelector('.nb-text'); if (el) el.textContent = B.notes.get(w.id); });
+    list.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => {
+      B.openNotes(b.dataset.edit);
+      document.getElementById('bd-notes').addEventListener('close', render, { once: true });
+    });
+  }
+  render();
+
+  document.getElementById('print-guide').onclick = () => B.print(() => {
+    let h = B.docHead('Biodyssey study guide', 'My notes from each world');
+    worlds.forEach(w => {
+      const p = B.progress.get(w.id) || {}, text = B.notes.get(w.id).trim();
+      h += `<div class="section"><h2>World ${w.n}: ${esc(w.title)}</h2>
+        <p><b>Goal:</b> ${p.goal ? 'reached' : 'not yet'}. <b>Stretch goal:</b> ${p.stretch ? 'reached' : 'not yet'}.</p>
+        <h3>Questions to answer</h3><ol>${w.prompts.map(q => '<li>' + esc(q) + '</li>').join('')}</ol>
+        <h3>My notes</h3>${text ? '<div class="note">' + esc(text) + '</div>' : '<div class="lines"></div>'.repeat(6)}</div>`;
+    });
+    return h;
+  });
+})();
+</script>
+</body>
+</html>
