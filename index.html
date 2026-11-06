@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Biodyssey · A journey through the worlds of biology</title>
+<meta name="description" content="Free classroom biology games. Travel from molecules to populations, one world at a time.">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='8' cy='23.5' r='2' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.8' r='3' fill='%23fff'/%3E%3Ccircle cx='23.6' cy='9.6' r='4.2' fill='none' stroke='%236ee7b7' stroke-width='2.2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="core/biodyssey.css">
+<style>
+  .hero { margin-bottom: var(--s7); }
+  .hero .bd-h1 { max-width: 14ch; }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: var(--s2); }
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); margin-top: var(--s4); }
+  .how > div { background: var(--bd-surface); border: 1px solid var(--bd-line); border-radius: var(--r-card); padding: var(--s4); display: flex; flex-direction: column; gap: var(--s1); animation: bd-rise .2s var(--ease); }
+  .how b { font-size: 15px; }
+  .how p { font-size: 14px; color: var(--bd-muted); }
+  .how .n { width: 28px; height: 28px; border-radius: 50%; background: var(--bd-brand-50); color: var(--bd-brand-600); display: grid; place-items: center; font-weight: 700; font-size: 13px; margin-bottom: var(--s2); }
+  .nudge { margin-bottom: var(--s5); }
+
+  /* The route: a scale rail on the left, worlds along it. */
+  .route { list-style: none; margin: 0; padding: 0; position: relative; display: flex; flex-direction: column; gap: var(--s3); }
+  .route::before { content: ""; position: absolute; left: 19px; top: 12px; bottom: 28px; width: 2px; background: repeating-linear-gradient(to bottom, var(--bd-line-2) 0 6px, transparent 6px 12px); }
+  .route li { position: relative; padding-left: 60px; }
+  .level { display: flex; align-items: baseline; gap: var(--s3); padding: var(--s4) 0 var(--s1); }
+  .level:first-child { padding-top: 0; }
+  .level::before { content: ""; position: absolute; left: 13px; top: calc(var(--s4) + 4px); width: 14px; height: 14px; border-radius: 4px; transform: rotate(45deg); background: var(--bd-canvas); border: 2px solid var(--bd-faint); }
+  .level:first-child::before { top: 4px; }
+  .level b { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--bd-ink); }
+  .level span { font-size: 13px; color: var(--bd-muted); }
+
+  .marker { position: absolute; left: 4px; top: 30px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--bd-surface); border: 2px solid var(--bd-line-2); color: var(--bd-muted); font-weight: 700; font-size: 14px; z-index: 1; }
+  .marker .bd-ic { width: 16px; height: 16px; stroke-width: 2.6; }
+  .st-started .marker { border-color: var(--bd-brand); color: var(--bd-brand); box-shadow: 0 0 0 4px var(--bd-brand-50); }
+  .st-goal .marker { background: var(--bd-good); border-color: var(--bd-good); color: #fff; }
+  .st-stretch .marker { background: var(--bd-warn); border-color: var(--bd-warn); color: #fff; }
+  .st-soon .marker { background: var(--bd-soft-2); border-style: dashed; color: var(--bd-faint); }
+
+  .world { display: flex; align-items: center; gap: var(--s5); padding: var(--s5); background: var(--bd-surface); border: 1px solid var(--bd-line);
+    border-radius: var(--r-card); box-shadow: var(--shadow-sm); color: var(--bd-ink); text-decoration: none; transition: border-color .15s var(--ease), box-shadow .15s var(--ease), transform .15s var(--ease); }
+  a.world:hover { border-color: var(--bd-brand-100); box-shadow: var(--shadow); transform: translateY(-1px); }
+  a.world:hover .go { color: var(--bd-brand); transform: translateX(2px); }
+  .art { width: 72px; height: 72px; border-radius: 18px; display: grid; place-items: center; font-size: 36px; flex: none; }
+  .wbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .wtop { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--bd-muted); }
+  .world h2 { font-size: 20px; font-weight: 700; letter-spacing: -.015em; }
+  .world p { color: var(--bd-muted); font-size: 15px; }
+  .wmeta { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s1); align-items: center; }
+  .wmeta .time { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--bd-muted); margin-right: var(--s1); }
+  .wmeta .time .bd-ic { width: 15px; height: 15px; }
+  .go { color: var(--bd-faint); transition: transform .15s var(--ease), color .15s; }
+  .st-soon .world { background: transparent; box-shadow: none; border-style: dashed; }
+  .st-soon .art { filter: grayscale(.6); opacity: .7; }
+  .route .end { padding-top: var(--s4); font-size: 14px; color: var(--bd-muted); }
+  .route .end::before { content: ""; position: absolute; left: 15px; top: calc(var(--s4) + 4px); width: 10px; height: 10px; border-radius: 50%; background: var(--bd-line-2); }
+
+  @media (max-width: 640px) {
+    .bd-page { padding-top: var(--s6); }
+    .hero { margin-bottom: var(--s6); }
+    .how { grid-template-columns: 1fr; }
+    .route li { padding-left: 48px; }
+    .route::before { left: 15px; }
+    .marker { left: 0; top: 22px; }
+    .level::before { left: 9px; }
+    .route .end::before { left: 11px; }
+    .world { gap: var(--s4); padding: var(--s4); align-items: flex-start; }
+    .art { width: 52px; height: 52px; border-radius: 14px; font-size: 26px; }
+    .go { display: none; }
+    .world h2 { font-size: 18px; }
+    .world p { font-size: 14px; }
+  }
+</style>
+</head>
+<body class="bd">
+<main class="bd-main">
+  <div class="bd-page">
+    <header class="bd-header hero">
+      <div class="bd-kicker">Your odyssey</div>
+      <h1 class="bd-h1">Zoom out through biology.</h1>
+      <p class="bd-goal">Each world is a game about one level of life. Start small with molecules and work your way up.</p>
+      <div class="bd-actions">
+        <a class="bd-btn lg" id="primary" href="#">Start</a>
+        <button class="bd-btn ghost" type="button" id="how-btn" aria-expanded="false" aria-controls="how">How it works</button>
+      </div>
+      <div class="how" id="how" hidden>
+        <div><span class="n">1</span><b>Play a world</b><p>Each one takes a class period or two. Go in any order.</p></div>
+        <div><span class="n">2</span><b>Take notes</b><p>Every world has a Notes button. Print them all as a study guide.</p></div>
+        <div><span class="n">3</span><b>Back up</b><p>Progress saves in this browser. A backup keeps it safe.</p></div>
+      </div>
+    </header>
+
+    <div class="bd-callout warn nudge" data-backup-nudge hidden>
+      <svg class="bd-ic" aria-hidden="true"><use href="#bdi-alert"/></svg>
+      <div class="grow"><span id="nudge-text">Your progress isn't backed up yet.</span> <button class="bd-link" type="button" id="nudge-btn">Back up now</button></div>
+    </div>
+
+    <ol class="route" id="route" aria-label="Worlds, from smallest to largest"></ol>
+  </div>
+</main>
+
+<script src="worlds/registry.js"></script>
+<script src="core/biodyssey.js"></script>
+<script>
+(function () {
+  const B = Biodyssey, esc = B.esc, icon = B.icon;
+  B.page();
+
+  const last = B.store.get('last', null);
+  const open = B.worlds.filter(w => w.status === 'open');
+  const route = document.getElementById('route');
+
+  function render() {
+    let html = '';
+    B.levels.forEach(level => {
+      const ws = B.worlds.filter(w => w.level === level.id);
+      if (!ws.length) return;
+      html += `<li class="level"><b>${esc(level.name)}</b><span>${esc(level.size)}</span></li>`;
+      ws.forEach(w => {
+        const soon = w.status !== 'open';
+        const st = soon ? 'soon' : B.worldState(w.id);
+        const marker = soon ? icon('lock') : st === 'goal' ? icon('check') : st === 'stretch' ? icon('star') : w.n;
+        const chips = [];
+        if (soon) chips.push('<span class="bd-chip line">Coming soon</span>');
+        else {
+          if (st === 'started') chips.push('<span class="bd-chip brand">In progress</span>');
+          if (st === 'goal' || st === 'stretch') chips.push(`<span class="bd-chip good">${icon('check')}Goal reached</span>`);
+          if ((B.progress.get(w.id) || {}).stretch) chips.push(`<span class="bd-chip warn">${icon('star')}Stretch goal</span>`);
+          if (w.id === last) chips.push(`<span class="bd-chip line">${icon('pin')}You were here</span>`);
+        }
+        const inner = `<span class="art" style="background:${esc(w.tint)}" aria-hidden="true">${w.art}</span>
+          <span class="wbody"><span class="wtop">World ${w.n}</span><h2>${esc(w.title)}</h2><p>${esc(w.goal)}</p>
+            <span class="wmeta"><span class="time">${icon('clock')}${esc(w.time)}</span>${chips.join('')}</span></span>
+          ${soon ? '' : `<span class="go">${icon('chevron-right', 'lg')}</span>`}`;
+        html += `<li class="st-${st}" id="w-${w.id}"><span class="marker" aria-hidden="true">${marker}</span>
+          ${soon ? `<div class="world" aria-label="${esc(w.title)}: coming soon">${inner}</div>` : `<a class="world" id="go-${w.id}" href="${esc(w.path)}">${inner}</a>`}</li>`;
+      });
+    });
+    html += '<li class="end">More worlds are on the way: organisms, ecosystems and the biosphere.</li>';
+    route.innerHTML = html;
+  }
+  render();
+
+  // The one primary action: continue the last world, or start the first unfinished one.
+  const btn = document.getElementById('primary');
+  const unfinished = w => B.worldState(w.id) === 'new' || B.worldState(w.id) === 'started';
+  const next = open.find(w => w.id === last && unfinished(w)) || open.find(unfinished) || open.find(w => w.id === last) || open[0];
+  const started = B.worldState(next.id) !== 'new';
+  btn.innerHTML = `${started ? 'Continue' : 'Start'} ${esc(next.title)}${icon('arrow-right')}`;
+  btn.href = next.path;
+
+  const how = document.getElementById('how'), howBtn = document.getElementById('how-btn');
+  howBtn.onclick = () => { how.hidden = !how.hidden; howBtn.setAttribute('aria-expanded', !how.hidden); };
+  const lb = B.store.get('lastBackup', null);
+  if (lb) document.getElementById('nudge-text').textContent = 'Your last backup was ' + B.ago(lb) + '.';
+  document.getElementById('nudge-btn').onclick = () => B.openBackup('save');
+})();
+</script>
+</body>
+</html>

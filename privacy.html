@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='8' cy='23.5' r='2' fill='%23fff'/%3E%3Ccircle cx='15.6' cy='16.8' r='3' fill='%23fff'/%3E%3Ccircle cx='23.6' cy='9.6' r='4.2' fill='none' stroke='%236ee7b7' stroke-width='2.2'/%3E%3C/svg%3E">
+<title>Safety and privacy · Biodyssey</title>
+<link rel="stylesheet" href="core/biodyssey.css">
+</head>
+<body class="bd">
+<main class="bd-main">
+  <div class="bd-page">
+    <header class="bd-header">
+      <div class="bd-kicker">Safety and privacy</div>
+      <h1 class="bd-h1">Nothing leaves the device.</h1>
+      <p class="bd-goal">A plain-language summary for students, families and schools.</p>
+    </header>
+    <div class="bd-panel bd-prose">
+      <h2 style="margin-top:0">What Biodyssey collects</h2>
+      <p><b>Nothing.</b> There are no accounts, logins, student numbers or email addresses. Biodyssey has no server of its own, and it uses no analytics, ads, cookies or trackers.</p>
+
+      <h2>Where progress is kept</h2>
+      <ul>
+        <li>Progress and notes are saved <b>only in the browser on this device</b>. Teachers can't see them, and neither can the people who make Biodyssey.</li>
+        <li>Clearing browsing data, or a Chromebook that wipes data at sign-out, deletes them. That's why every page has <b>Back up</b>.</li>
+        <li>A backup (a save code or a save file) is made only when a student chooses to, and it goes only where the student puts it, such as a Google Doc or a private Classroom comment.</li>
+      </ul>
+
+      <h2>Names</h2>
+      <p>A name is <b>optional</b>. It is only asked for on printouts, so a teacher knows whose work it is, and it stays on the device.</p>
+
+      <h2>How this is enforced</h2>
+      <p>Every page carries a security rule (a Content Security Policy) that tells the browser the page may not send data anywhere. Fonts and code are served from this site, so a student's browser doesn't contact other companies just by opening a page.</p>
+
+      <h2>The one outside service</h2>
+      <p>Symbio's opening chapter shows a short, teacher-chosen video clip. It plays from YouTube in <b>privacy-enhanced mode</b> (youtube-nocookie.com), with no related videos. YouTube is contacted only on that chapter, to play the clip. If a school network blocks YouTube, the page says so, and the teacher can show the clip to the class.</p>
+      <p>Like any website, Biodyssey is delivered by a web host (GitHub Pages), which receives the standard information any browser sends when it loads a page.</p>
+
+      <h2>Students and each other</h2>
+      <p>There is no chat, no shared board and no public leaderboard. Students never see each other's names or scores in Biodyssey.</p>
+
+      <h2>The content</h2>
+      <p>Every world is checked for scientific accuracy against published research, and for classroom appropriateness, before it goes live.</p>
+
+      <h2>Questions</h2>
+      <p>Ask your teacher. Teachers can find more in the <a href="teacher.html">Teacher guide</a>.</p>
+    </div>
+  </div>
+</main>
+<script src="worlds/registry.js"></script>
+<script src="core/biodyssey.js"></script>
+<script>
+(function () {
+  const B = Biodyssey;
+  B.page();
+
+})();
+</script>
+</body>
+</html>
