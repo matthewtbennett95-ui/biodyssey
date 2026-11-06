@@ -1,0 +1,547 @@
+<title>Signal Siege Teacher</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: phone-first control room. Sticky header + tab strip, one scrolling column, max 760px on wide screens. */
+:root {
+  --bg: #EEF1F6;
+  --surface: #FFFFFF;
+  --surface-2: #E4E9F1;
+  --fg: #0C223F;
+  --muted: #56677F;
+  --line: #CDD6E3;
+  --accent: #8B2331;
+  --accent-fg: #FFFFFF;
+  --gold: #7D6A33;
+  --ok: #1F7A4D;
+  --warn: #9A5B00;
+  --bad: #B3261E;
+  --f-display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --f-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #06111F; --surface: #0C223F; --surface-2: #132D52; --fg: #EEF1F6; --muted: #A3B3CA; --line: #24426B;
+    --accent: #D2505C; --accent-fg: #06111F; --gold: #C7B683; --ok: #74D19C; --warn: #E8B04A; --bad: #EE7272;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #06111F; --surface: #0C223F; --surface-2: #132D52; --fg: #EEF1F6; --muted: #A3B3CA; --line: #24426B;
+  --accent: #D2505C; --accent-fg: #06111F; --gold: #C7B683; --ok: #74D19C; --warn: #E8B04A; --bad: #EE7272;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; } /* Apps Script pages get no reset, so hidden must always win */
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+button, input, select { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.label { font-family: var(--f-display); font-weight: 600; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* PIN */
+.pin-screen { min-height: 100%; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding-block: 40px; }
+.pin-card { width: 100%; max-width: 360px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.pin-card h1 { margin: 0; font-family: var(--f-display); font-weight: 700; font-size: 44px; line-height: .95; text-transform: uppercase; text-wrap: balance; }
+.pin-card h1 span { color: var(--accent); }
+.pin-row { display: flex; gap: 8px; }
+.pin-row input { flex: 1; min-width: 0; width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font: 700 22px/1 var(--f-display); letter-spacing: .3em; }
+.btn { border: 0; border-radius: 10px; padding: 11px 18px; background: var(--accent); color: var(--accent-fg); font-family: var(--f-display); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 16px; cursor: pointer; }
+.btn[disabled] { opacity: .6; }
+.btn-line { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; cursor: pointer; font-family: var(--f-display); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 14px; }
+.btn-line.danger { color: var(--bad); }
+.err { color: var(--bad); margin: 0; min-height: 1.4em; }
+
+/* Header + tabs */
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.top-row { display: flex; align-items: center; gap: 10px; padding-block: 12px 8px; }
+.title-block { flex: 1; min-width: 0; display: grid; line-height: 1.1; }
+.top-row h1 { margin: 0; min-width: 0; font-family: var(--f-display); font-weight: 700; font-size: 24px; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top-row h1 span { color: var(--accent); }
+.updated { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.tabs { display: flex; gap: 4px; padding-block: 0 10px; }
+.tabs button { flex: 1; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 6px; cursor: pointer; font-family: var(--f-display); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 15px; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+main { padding-block: 16px 48px; display: grid; gap: 16px; }
+.preview-banner { padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--gold); color: var(--muted); font-size: 13px; }
+
+/* Summary tiles */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 620px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 2px; }
+.tile b { font-family: var(--f-display); font-weight: 700; font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.tile small { color: var(--muted); font-size: 12px; }
+.tile.alert b { color: var(--warn); }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; flex: 1; min-width: 0; }
+.chip-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; white-space: nowrap; cursor: pointer; font-size: 13px; }
+.chip-btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; }
+
+/* Student list */
+.list { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.row { border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row > button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px 14px; text-align: left; background: none; border: 0; cursor: pointer; }
+.row .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .meta { color: var(--muted); font-size: 12px; grid-column: 1; }
+.row .right { grid-row: span 2; display: grid; justify-items: end; gap: 4px; font-variant-numeric: tabular-nums; }
+.bar { width: 96px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ok); }
+.bar.low i { background: var(--warn); }
+.pct { font-family: var(--f-display); font-weight: 700; font-size: 17px; }
+.pct.low { color: var(--warn); }
+.detail { padding: 0 14px 14px; display: grid; gap: 10px; }
+.kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; margin: 0; font-size: 14px; }
+.kv div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+.confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 14px; }
+.empty { padding: 20px; color: var(--muted); text-align: center; }
+
+/* Settings + cells */
+.warnbox { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--warn); color: var(--fg); font-size: 14px; display: grid; gap: 4px; }
+.warnbox b { color: var(--warn); }
+.setting { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; }
+.setting h3 { margin: 0; font-size: 15px; }
+.setting p { margin: 0; color: var(--muted); font-size: 13px; grid-column: 1; }
+.setting .ctl { grid-row: 1 / span 2; grid-column: 2; display: grid; justify-items: end; gap: 4px; }
+.setting input[type="number"], .setting input[type="text"], .field input, .field select { width: 110px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); font-variant-numeric: tabular-nums; }
+.setting input[type="text"] { width: 150px; }
+.setting input[type="checkbox"] { width: 24px; height: 24px; accent-color: var(--accent); }
+.status { font-size: 12px; min-height: 1.2em; color: var(--muted); text-align: right; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--bad); }
+.hint { font-size: 11px; color: var(--muted); }
+
+details.cell { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+details.cell summary { list-style: none; display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+details.cell summary::-webkit-details-marker { display: none; }
+details.cell summary b { flex: 1; min-width: 0; }
+details.cell summary span { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 14px/1 var(--f-display); flex: none; }
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 0 14px 14px; }
+.field { display: grid; gap: 3px; min-width: 0; }
+.field label { font-size: 12px; color: var(--muted); }
+.field input, .field select { width: 100%; }
+.field.wide { grid-column: 1 / -1; }
+.field .status { text-align: left; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<section id="pinScreen" class="wrap pin-screen">
+  <form id="pinForm" class="pin-card" autocomplete="off">
+    <span class="label">Teacher panel</span>
+    <h1 id="pinTitle">Signal <span>Siege</span></h1>
+    <label class="label" for="pin">PIN</label>
+    <div class="pin-row">
+      <input id="pin" type="password" inputmode="numeric" required>
+      <button id="pinBtn" class="btn" type="submit">Open</button>
+    </div>
+    <p id="pinErr" class="err" role="alert"></p>
+    <p id="pinPreview" class="preview-banner" hidden>Preview with example students. The PIN is 2468. In class, the PIN lives on the Config tab of your sheet.</p>
+  </form>
+</section>
+
+<section id="app" hidden>
+  <header class="top">
+    <div class="wrap">
+      <div class="top-row">
+        <div class="title-block"><h1 id="appTitle">Signal <span>Siege</span></h1><span class="updated" id="updated"></span></div>
+        <button class="btn-line" id="refresh" type="button">Refresh</button>
+      </div>
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tab-students" aria-selected="true" type="button">Students</button>
+        <button role="tab" id="tab-settings" aria-selected="false" type="button">Settings</button>
+        <button role="tab" id="tab-cells" aria-selected="false" type="button">Cells</button>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <p id="previewBanner" class="preview-banner" hidden>Preview data: these students are examples. Changes here only last until you reload.</p>
+    <div id="view-students"></div>
+    <div id="view-settings" hidden></div>
+    <div id="view-cells" hidden></div>
+  </main>
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  const api = (function () {
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      return {
+        preview: false,
+        call: function (fn) {
+          const args = Array.prototype.slice.call(arguments, 1);
+          return new Promise(function (resolve, reject) {
+            const r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+            r[fn].apply(r, args);
+          });
+        }
+      };
+    }
+    const M = window.__SIGNAL_SIEGE_TEACHER_MOCK__;
+    if (!M) return null;
+    const data = JSON.parse(JSON.stringify(M));
+    function check(pin) { if (String(pin) !== '2468') throw new Error('That PIN is not correct.'); }
+    function rule(spec, v) {
+      if (spec.type === 'integer' || spec.type === 'number') {
+        let n = Number(v);
+        if (v === '' || !isFinite(n)) return null;
+        if (spec.type === 'integer') n = Math.round(n);
+        return (n < spec.min || n > spec.max) ? null : n;
+      }
+      if (spec.type === 'boolean') return !!v;
+      if (spec.type === 'list') return spec.options.indexOf(v) >= 0 ? v : null;
+      if (spec.type === 'color') return /^#[0-9a-f]{6}$/i.test(v) ? v.toUpperCase() : null;
+      if (spec.type === 'ligand') return v === '' || data.ligands.some(function (l) { return l.id === v; }) ? v : null;
+      return String(v);
+    }
+    const h = {
+      teacherLoad: function (pin) { check(pin); data.serverNow = Date.now(); return JSON.parse(JSON.stringify(data)); },
+      teacherUpdateConfig: function (pin, key, value) {
+        check(pin);
+        const c = data.config.filter(function (x) { return x.key === key; })[0];
+        const v = rule(c, value);
+        if (v === null) return { ok: false, error: c.type === 'integer' ? 'Must be a whole number from ' + c.min + ' to ' + c.max + '.' : 'Must be a number from ' + c.min + ' to ' + c.max + '.' };
+        c.value = v; return { ok: true, value: v };
+      },
+      teacherUpdateBuilding: function (pin, id, field, value) {
+        check(pin);
+        const b = data.buildings.filter(function (x) { return x.id === id; })[0];
+        const v = rule(data.fields[field], value);
+        if (v === null) return { ok: false, error: 'Not allowed for ' + data.fields[field].label + '.' };
+        b[field] = v; return { ok: true, value: v };
+      },
+      teacherResetBase: function (pin, id) {
+        check(pin);
+        const p = data.players.filter(function (x) { return x.id === id; })[0];
+        if (p) { p.buildings = 4; p.active = 4; p.activePct = 100; p.atpPerMin = 100; p.goals = 0; p.stars = 0; p.level = 0; p.lastSave = Date.now(); }
+        return { ok: true };
+      }
+    };
+    return {
+      preview: true,
+      call: function (fn) {
+        const args = Array.prototype.slice.call(arguments, 1);
+        return new Promise(function (resolve, reject) {
+          setTimeout(function () { try { resolve(h[fn].apply(null, args)); } catch (e) { reject(e); } }, 250);
+        });
+      }
+    };
+  })();
+
+  const $ = function (id) { return document.getElementById(id); };
+  const T = { pin: '', data: null, tab: 'students', hr: 'All', sort: 'recent', open: '' };
+  const LABELS = {
+    gameTitle: 'Game title', unlockedDay: 'Unlocked day', maxLevel: 'Highest infection level open', helperBoost: 'Helper T boost', neutrophilDPS: 'Neutrophil damage',
+    neutrophilLife: 'Neutrophil life (seconds)', antibodyBoost: 'Antibody damage boost', complementDPS: 'Complement damage', antibodySlow: 'Antibody slowdown',
+    inflammationRate: 'Inflammation rate', stormThreshold: 'Cytokine storm threshold', stormDPS: 'Cytokine storm damage', il10Calm: 'IL-10 calming',
+    showLeaderboard: 'Show class leaderboard', checkQuestions: 'Ask a question after each test', goalReward: 'Goal reward (ATP)', killReward: 'Kill reward (ATP)',
+    starReward: 'Star reward (ATP × level)', testWaveSize: 'Level 1 pathogen count', pathogenHP: 'Pathogen health', pathogenDPS: 'Pathogen damage',
+    pathogenSpeed: 'Pathogen speed', alarmBoost: 'Wall alarm boost', gridSize: 'Board size for new bases', startATP: 'Starting ATP',
+    productionMultiplier: 'Production multiplier', storageCapBase: 'Base ATP storage', offlineHours: 'Hours banked while away',
+    sellRefund: 'Refund when removing a cell', autosaveSeconds: 'Autosave every (seconds)', showSignalLines: 'Show signal lines'
+  };
+  const LOW = 60; // active % below this flags a student who may not get the signaling idea yet
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function ago(ms) {
+    if (!ms) return 'never';
+    const s = Math.max(0, (Date.now() - ms) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.round(s / 60) + ' min ago';
+    if (s < 86400) return Math.round(s / 3600) + ' hr ago';
+    return Math.round(s / 86400) + ' d ago';
+  }
+  function starText(n) { n = Math.max(0, Math.min(3, n || 0)); return '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n); }
+  function textOn(hex) {
+    const n = parseInt(String(hex).slice(1), 16);
+    return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) > 150 ? '#0B1B33' : '#FFFFFF';
+  }
+
+  // ---------- PIN ----------
+  if (!api) { $('pinErr').textContent = 'Open this page from your web app link with ?page=teacher at the end.'; $('pinBtn').disabled = true; }
+  else if (api.preview) { $('pinPreview').hidden = false; $('previewBanner').hidden = false; }
+  try { const saved = sessionStorage.getItem('ss-teacher-pin'); if (saved) $('pin').value = saved; } catch (e) { /* storage blocked */ }
+
+  $('pinForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    T.pin = $('pin').value.trim();
+    $('pinBtn').disabled = true;
+    load().then(function (ok) {
+      $('pinBtn').disabled = false;
+      if (!ok) return;
+      try { sessionStorage.setItem('ss-teacher-pin', T.pin); } catch (err) { /* fine */ }
+      $('pinScreen').hidden = true;
+      $('app').hidden = false;
+    });
+  });
+
+  function load() {
+    return api.call('teacherLoad', T.pin).then(function (res) {
+      if (!res || !res.ok) throw new Error(res && res.error ? res.error : 'Could not load the dashboard.');
+      T.data = res;
+      T.loadedAt = Date.now();
+      const title = (res.config.filter(function (c) { return c.key === 'gameTitle'; })[0] || {}).value || 'Signal Siege';
+      document.title = title + ' Teacher';
+      renderAll();
+      return true;
+    }).catch(function (err) {
+      if ($('app').hidden) $('pinErr').textContent = err.message || 'Could not reach the sheet.';
+      else alertInline(err.message);
+      return false;
+    });
+  }
+  function alertInline(msg) { $('updated').textContent = msg; }
+
+  $('refresh').addEventListener('click', function () { $('updated').textContent = 'Refreshing…'; load(); });
+  setInterval(function () { if (T.loadedAt) $('updated').textContent = 'Updated ' + ago(T.loadedAt); }, 15000);
+
+  // ---------- Tabs ----------
+  ['students', 'settings', 'cells'].forEach(function (name) {
+    $('tab-' + name).addEventListener('click', function () {
+      T.tab = name;
+      ['students', 'settings', 'cells'].forEach(function (n) {
+        $('tab-' + n).setAttribute('aria-selected', n === name ? 'true' : 'false');
+        $('view-' + n).hidden = n !== name;
+      });
+    });
+  });
+
+  function renderAll() {
+    $('updated').textContent = 'Updated ' + ago(T.loadedAt);
+    renderStudents();
+    renderSettings();
+    renderCells();
+  }
+
+  // ---------- Students ----------
+  function renderStudents() {
+    const d = T.data, box = $('view-students');
+    const players = d.players.filter(function (p) { return T.hr === 'All' || p.homeroom === T.hr; });
+    const started = players.length;
+    const avg = started ? Math.round(players.reduce(function (a, p) { return a + p.activePct; }, 0) / started) : 0;
+    const low = players.filter(function (p) { return p.buildings >= 4 && p.activePct < LOW; }).length;
+    const G = d.goalsTotal || 5;
+    const survived = players.filter(function (p) { return p.level >= 1; }).length;
+    const checks = players.reduce(function (a, p) { return a + (p.checks || 0); }, 0);
+    const correct = players.reduce(function (a, p) { return a + (p.correct || 0); }, 0);
+    const sorted = players.slice().sort(function (a, b) {
+      if (T.sort === 'name') return a.name.localeCompare(b.name);
+      if (T.sort === 'low') return a.activePct - b.activePct || a.name.localeCompare(b.name);
+      if (T.sort === 'level') return (b.level || 0) - (a.level || 0) || (b.stars || 0) - (a.stars || 0);
+      return (b.lastSave || 0) - (a.lastSave || 0);
+    });
+    const rosterInHr = T.hr === 'All' ? d.rosterCount : null;
+
+    box.innerHTML =
+      '<div class="tiles">' +
+        '<div class="tile"><span class="label">Started</span><b>' + started + (rosterInHr ? '<small> / ' + rosterInHr + '</small>' : '') + '</b><small>bases created</small></div>' +
+        '<div class="tile"><span class="label">Signaling</span><b>' + avg + '%</b><small>average cells active</small></div>' +
+        '<div class="tile' + (low ? ' alert' : '') + '"><span class="label">Check in</span><b>' + low + '</b><small>under ' + LOW + '% active</small></div>' +
+        '<div class="tile"><span class="label">Quick checks</span><b>' + (checks ? Math.round(correct / checks * 100) + '%' : '–') + '</b><small>' + checks + ' answered correctly ' + correct + '</small></div>' +
+      '</div>' +
+      '<div class="controls" style="margin-top:14px">' +
+        '<div class="chips" id="hrChips"></div>' +
+        '<label class="label" for="sortSel" hidden>Sort</label>' +
+        '<select id="sortSel"><option value="recent">Last active</option><option value="level">Highest level</option><option value="low">Lowest % active</option><option value="name">Name</option></select>' +
+      '</div>' +
+      '<div class="list" id="plist" style="margin-top:10px"></div>';
+
+    const chips = $('hrChips');
+    ['All'].concat(d.homerooms).forEach(function (h) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip-btn'; b.textContent = h;
+      b.setAttribute('aria-pressed', T.hr === h ? 'true' : 'false');
+      b.addEventListener('click', function () { T.hr = h; renderStudents(); });
+      chips.appendChild(b);
+    });
+    $('sortSel').value = T.sort;
+    $('sortSel').addEventListener('change', function () { T.sort = this.value; renderStudents(); });
+
+    const list = $('plist');
+    if (!sorted.length) { list.innerHTML = '<p class="empty">No bases yet. Students appear here after they log in once.</p>'; return; }
+    sorted.forEach(function (p) {
+      const isLow = p.buildings >= 4 && p.activePct < LOW;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = '<button type="button" aria-expanded="' + (T.open === p.id) + '">' +
+        '<span class="nm">' + esc(p.name) + '</span>' +
+        '<span class="right"><span class="pct' + (isLow ? ' low' : '') + '">' + p.activePct + '%</span><span class="bar' + (isLow ? ' low' : '') + '"><i style="width:' + p.activePct + '%"></i></span></span>' +
+        '<span class="meta">' + esc(p.homeroom || 'No homeroom') + ' · ' + ago(p.lastSave) + ' · goals ' + p.goals + '/' + G + ' · Lv ' + (p.level || 0) + ' ★' + (p.stars || 0) + '</span>' +
+        '</button>';
+      if (T.open === p.id) {
+        const det = document.createElement('div');
+        det.className = 'detail';
+        det.innerHTML = '<dl class="kv">' +
+          '<div><dt>Cells</dt><dd>' + p.active + ' of ' + p.buildings + ' active</dd></div>' +
+          '<div><dt>ATP</dt><dd>' + Math.floor(p.atp).toLocaleString() + '</dd></div>' +
+          '<div><dt>ATP/min</dt><dd>' + p.atpPerMin + '</dd></div>' +
+          '<div><dt>Highest level</dt><dd>' + (p.level || 0) + ' of ' + (d.levelsTotal || 6) + '</dd></div>' +
+          '<div><dt>Stars</dt><dd>' + (p.stars || 0) + '</dd></div>' +
+          '<div><dt>Quick checks</dt><dd>' + (p.correct || 0) + ' / ' + (p.checks || 0) + ' right</dd></div>' +
+          '<div><dt>Goals</dt><dd>' + p.goals + ' of ' + G + '</dd></div>' +
+          '<div><dt>Student #</dt><dd>' + esc(p.id) + '</dd></div>' +
+          '</dl>' +
+          '<div class="confirm" id="cf-' + esc(p.id) + '"><button class="btn-line danger" type="button">Reset base</button></div>';
+        row.appendChild(det);
+        const cf = det.querySelector('.confirm');
+        cf.querySelector('button').addEventListener('click', function () {
+          cf.innerHTML = '<span>Give ' + esc(p.name) + ' a fresh starter base? Their cells and ATP are cleared.</span>' +
+            '<button class="btn-line danger" type="button" data-a="yes">Reset</button><button class="btn-line" type="button" data-a="no">Cancel</button>';
+          cf.querySelector('[data-a="no"]').addEventListener('click', function () { renderStudents(); });
+          cf.querySelector('[data-a="yes"]').addEventListener('click', function () {
+            cf.innerHTML = '<span>Resetting…</span>';
+            api.call('teacherResetBase', T.pin, p.id).then(function (r) {
+              if (!r || !r.ok) throw new Error(r && r.error);
+              cf.innerHTML = '<span class="status ok">Reset. It takes effect the next time they open the game.</span>';
+              setTimeout(load, 900);
+            }).catch(function (err) { cf.innerHTML = '<span class="status bad">' + esc(err.message || 'Reset failed.') + '</span>'; });
+          });
+        });
+      }
+      row.querySelector('button').addEventListener('click', function () { T.open = T.open === p.id ? '' : p.id; renderStudents(); });
+      list.appendChild(row);
+    });
+  }
+
+  // ---------- Settings ----------
+  function renderSettings() {
+    const box = $('view-settings');
+    box.innerHTML = '';
+    const warns = T.data.config.filter(function (c) { return c.warning; });
+    if (warns.length) {
+      const w = document.createElement('div');
+      w.className = 'warnbox';
+      w.innerHTML = '<b>Some sheet values were ignored</b>' + warns.map(function (c) { return '<span>' + esc(LABELS[c.key] || c.key) + ': ' + esc(c.warning) + '</span>'; }).join('');
+      box.appendChild(w);
+    }
+    const grid = document.createElement('div');
+    grid.style.display = 'grid';
+    grid.style.gap = '8px';
+    grid.style.marginTop = warns.length ? '12px' : '0';
+    T.data.config.forEach(function (c) {
+      const el = document.createElement('div');
+      el.className = 'setting';
+      const id = 'cfg-' + c.key;
+      let input;
+      if (c.type === 'boolean') input = '<input id="' + id + '" type="checkbox"' + (c.value ? ' checked' : '') + '>';
+      else if (c.type === 'text') input = '<input id="' + id + '" type="text" value="' + esc(c.value) + '">';
+      else input = '<input id="' + id + '" type="number" inputmode="decimal" step="' + (c.type === 'integer' ? 1 : 'any') + '" min="' + c.min + '" max="' + c.max + '" value="' + c.value + '">';
+      el.innerHTML = '<h3><label for="' + id + '">' + esc(LABELS[c.key] || c.key) + '</label></h3>' +
+        '<div class="ctl">' + input + (c.min !== undefined && c.min !== '' ? '<span class="hint">' + c.min + '–' + c.max + '</span>' : '') + '<span class="status" id="st-' + c.key + '"></span></div>' +
+        '<p>' + esc(c.description) + '</p>';
+      grid.appendChild(el);
+      const inp = el.querySelector('input');
+      inp.addEventListener('change', function () {
+        const v = c.type === 'boolean' ? inp.checked : inp.value;
+        saveField('teacherUpdateConfig', [c.key], v, $('st-' + c.key), function (clean) {
+          c.value = clean;
+          if (c.type !== 'boolean') inp.value = clean;
+        }, function () {
+          if (c.type === 'boolean') inp.checked = !!c.value; else inp.value = c.value;
+        });
+      });
+    });
+    box.appendChild(grid);
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.style.fontSize = '13px';
+    note.textContent = 'Students get new settings the next time they open or reload the game.';
+    box.appendChild(note);
+  }
+
+  function saveField(fn, args, value, statusEl, onOk, onFail) {
+    statusEl.className = 'status';
+    statusEl.textContent = 'Saving…';
+    api.call.apply(null, [fn, T.pin].concat(args, [value])).then(function (r) {
+      if (!r || !r.ok) throw new Error(r && r.error ? r.error : 'Not saved.');
+      statusEl.className = 'status ok';
+      statusEl.textContent = 'Saved';
+      onOk(r.value);
+      setTimeout(function () { if (statusEl.textContent === 'Saved') statusEl.textContent = ''; }, 2500);
+    }).catch(function (err) {
+      statusEl.className = 'status bad';
+      statusEl.textContent = err.message || 'Not saved.';
+      onFail();
+    });
+  }
+
+  // ---------- Cells ----------
+  const FIELD_ORDER = ['cost', 'unlockDay', 'maxCount', 'hp', 'dps', 'attackRange', 'produces', 'needs', 'emits', 'mode', 'range', 'boostedBy', 'boostMult', 'storage', 'troopCap', 'ability', 'size', 'kind', 'name', 'abbr', 'color', 'description'];
+
+  function renderCells() {
+    const box = $('view-cells');
+    box.innerHTML = '';
+    const d = T.data;
+    if (d.buildingWarnings && d.buildingWarnings.length) {
+      const w = document.createElement('div');
+      w.className = 'warnbox';
+      w.innerHTML = '<b>Some sheet values were ignored</b>' + d.buildingWarnings.map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('');
+      box.appendChild(w);
+    }
+    const ligById = {};
+    d.ligands.forEach(function (l) { ligById[l.id] = l; });
+    const stack = document.createElement('div');
+    stack.style.display = 'grid';
+    stack.style.gap = '8px';
+    stack.style.marginTop = '12px';
+    d.buildings.forEach(function (b) {
+      const det = document.createElement('details');
+      det.className = 'cell';
+      const sum = document.createElement('summary');
+      det.appendChild(sum);
+      function paintSummary() {
+        sum.innerHTML = '<span class="swatch" style="background:' + b.color + ';color:' + textOn(b.color) + '">' + esc(b.abbr) + '</span>' +
+          '<b>' + esc(b.name) + '</b><span>' + b.cost + ' ATP · day ' + b.unlockDay + '</span>';
+      }
+      paintSummary();
+      const fields = document.createElement('div');
+      fields.className = 'fields';
+      FIELD_ORDER.forEach(function (f) {
+        const spec = d.fields[f];
+        if (!spec) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'field' + (f === 'description' ? ' wide' : '');
+        const id = 'b-' + b.id + '-' + f;
+        let ctl;
+        if (spec.type === 'ligand') {
+          ctl = '<select id="' + id + '"><option value="">None</option>' + d.ligands.map(function (l) {
+            return '<option value="' + l.id + '"' + (b[f] === l.id ? ' selected' : '') + '>' + esc(l.name) + '</option>';
+          }).join('') + '</select>';
+        } else if (spec.type === 'list') {
+          ctl = '<select id="' + id + '">' + spec.options.map(function (o) { return '<option' + (b[f] === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
+        } else if (spec.type === 'integer' || spec.type === 'number') {
+          ctl = '<input id="' + id + '" type="number" inputmode="decimal" step="' + (spec.type === 'integer' ? 1 : 'any') + '" min="' + spec.min + '" max="' + spec.max + '" value="' + b[f] + '">';
+        } else {
+          ctl = '<input id="' + id + '" type="text" value="' + esc(b[f]) + '">';
+        }
+        wrap.innerHTML = '<label for="' + id + '">' + esc(spec.label) + (spec.min !== undefined ? ' <span class="hint">(' + spec.min + '–' + spec.max + ')</span>' : '') + '</label>' + ctl + '<span class="status" id="s' + id + '"></span>';
+        const el = wrap.querySelector('input,select');
+        el.addEventListener('change', function () {
+          saveField('teacherUpdateBuilding', [b.id, f], el.value, $('s' + id), function (clean) {
+            b[f] = clean;
+            if (el.tagName === 'INPUT') el.value = clean;
+            paintSummary();
+          }, function () { el.value = b[f]; });
+        });
+        fields.appendChild(wrap);
+      });
+      det.appendChild(fields);
+      stack.appendChild(det);
+    });
+    box.appendChild(stack);
+    const note = document.createElement('p');
+    note.className = 'hint';
+    note.style.fontSize = '13px';
+    note.textContent = 'Signal reach: juxtacrine means touching, paracrine means within the range in tiles, endocrine means the whole base.';
+    box.appendChild(note);
+  }
+})();
+</script>
