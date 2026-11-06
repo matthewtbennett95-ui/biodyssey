@@ -31,6 +31,7 @@ The owner wants Biodyssey to look and feel as **professional, sleek and modern a
 - **Consistent components.** Reuse the same buttons, cards, chips, headers and modals everywhere, and never invent a one-off style when a component exists.
 - **Restraint with color.** Mostly neutral surfaces; the brand color marks the primary action and the current location. Semantic colors (green, rose, amber) only where they carry meaning.
 - **Motion is subtle and purposeful:** short fades and transitions that explain a change, never decoration.
+- **Never cover the play area.** Instructions, banners and results go beside the board (or above or below it on phones), never on top of it. On phones, the squares you tap stay big: shrink anything that isn't playable.
 - **Every state is designed:** empty, loading, success, error, locked and completed screens all look intentional.
 - **Accessible:** readable contrast, 44px touch targets on phones, visible focus rings, labels on every icon.
 - Review real screenshots at Chromebook and phone sizes, and include the GUI designer's eye in every focus group.

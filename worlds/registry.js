@@ -34,17 +34,17 @@ window.BIODYSSEY_WORLDS = [
   {
     id: 'signal-siege', unit: 4, status: 'open',
     title: 'Signal Siege', art: '🦠', tint: '#fff1f2',
-    goal: 'Wire up a lymph node with cell signals, then raid infections with your immune cells.',
-    path: 'worlds/signal-siege/index.html', time: '1–2 class periods',
+    goal: 'Place immune cells, press Run, and see how cells signal each other.',
+    path: 'worlds/signal-siege/index.html', time: '1 class period',
     goals: {
-      goal: 'Earn at least one star on all 8 infection sites',
+      goal: 'Finish boot camp: earn at least one star on all 8 levels',
       stretch: 'Earn all 24 stars'
     },
     prompts: [
-      'Pick one signal from your lymph node. Describe it as reception, transduction and response: which cell sends it, which cell receives it, and what changes?',
+      'Pick one signal from the game. Describe it as reception, transduction and response: which cell sends it, which receives it, and what changes?',
       'Explain juxtacrine, paracrine and endocrine signaling, with one example of each from the game.',
-      'How do bacteria use quorum sensing? Why did destroying a quorum hub silence the toxin colonies near it?',
-      'Give one example of positive feedback and one of negative feedback from your raids.'
+      'How do bacteria use quorum sensing? Why did it matter how many bacteria were on the board at once?',
+      'Give one example of positive feedback and one of negative feedback from the cytokine storm level.'
     ],
     topics: 'Cell communication, signal transduction, quorum sensing, feedback, immune defense',
     standards: ['AP Biology 4.1–4.3, 4.5', 'NGSS HS-LS1-2', 'NGSS HS-LS1-3']
