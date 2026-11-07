@@ -156,6 +156,8 @@
   /* ---------- Toasts ---------- */
   function toast(msg, opt) {
     opt = opt || {};
+    // A world with a play area can show notices in its own panel instead, so nothing covers the board.
+    if (window.Biodyssey && typeof window.Biodyssey.onToast === 'function' && window.Biodyssey.onToast(msg, opt)) return;
     let box = document.querySelector('.bd-toasts');
     if (!box) { box = document.createElement('div'); box.className = 'bd-toasts'; box.setAttribute('role', 'status'); box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
     const t = document.createElement('div');

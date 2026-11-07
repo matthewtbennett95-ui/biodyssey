@@ -14,16 +14,19 @@
 
   /* ---------- Signals ---------- */
   const SIGNALS = {
-    chemokine: { name: 'Chemokine', mode: 'paracrine', range: 2, color: '#65a30d',
+    chemokine: { name: 'Chemokine', mode: 'paracrine', range: 2, color: '#65a30d', path: 'Gi',
       receptor: 'G protein-coupled receptor', relay: 'G protein activates a relay of kinases', response: 'Neutrophils leave the blood here' },
-    antigen: { name: 'Antigen', mode: 'juxtacrine', color: '#9333ea',
+    antigen: { name: 'Antigen', mode: 'juxtacrine', color: '#9333ea', path: 'kinase',
       receptor: 'T cell receptor', relay: 'Kinase cascade inside the helper T cell', response: 'The helper T cell switches on' },
-    help: { name: 'T cell help', mode: 'juxtacrine', color: '#db2777',
+    help: { name: 'T cell help', mode: 'juxtacrine', color: '#db2777', path: 'kinase',
       receptor: 'CD40 receptor', relay: 'Relay proteins switch on new genes', response: 'The B cell makes antibodies' },
-    epinephrine: { name: 'Epinephrine', mode: 'endocrine', color: '#ea580c',
+    epinephrine: { name: 'Epinephrine', mode: 'endocrine', color: '#ea580c', path: 'Gs',
       receptor: 'G protein-coupled receptor', relay: 'Second messenger (cAMP) amplifies the signal', response: 'Twice as many neutrophils released' },
-    il10: { name: 'IL-10', mode: 'paracrine', range: 2, color: '#0284c7',
+    il10: { name: 'IL-10', mode: 'paracrine', range: 2, color: '#0284c7', path: 'kinase',
       receptor: 'IL-10 receptor', relay: 'Kinases switch on calming genes', response: 'This cell causes much less inflammation' }
+  };
+  const PATHS = {
+    Gi: 'G protein (Gi)', Gs: 'G protein (Gs)', kinase: 'Kinase cascade'
   };
 
   /* ---------- Your cells ---------- */
@@ -51,7 +54,9 @@
   const GERMS = {
     bacterium: { name: 'Bacterium', hp: 60, speed: 0.55, dps: 16 },
     swarmer: { name: 'Fast bacterium', hp: 26, speed: 1.15, dps: 10 },
-    capsule: { name: 'Encapsulated bacterium', hp: 95, speed: 0.5, dps: 16, capsule: true }
+    capsule: { name: 'Encapsulated bacterium', hp: 95, speed: 0.5, dps: 16, capsule: true },
+    pertussis: { name: 'Pertussis-toxin bacterium', hp: 70, speed: 0.5, dps: 14, toxin: 'pertussis' },
+    cholera: { name: 'Cholera-toxin bacterium', hp: 70, speed: 0.5, dps: 14, toxin: 'cholera' }
   };
 
   /* ---------- Signals on a layout ---------- */
@@ -71,16 +76,18 @@
         for (let r = 0; r < n; r++) {
           if (r === s || !alive[r]) continue;
           const ok = sig.mode === 'endocrine' || (sig.mode === 'juxtacrine' ? adjacent(cells[s], cells[r]) : near(cells[s], cells[r], sig.range));
+          if (ok && cells[r].blocked && sig.path === 'Gi') continue;   // pertussis toxin: Gi can't relay the signal
           if (ok) (gets[r][D.emits] = gets[r][D.emits] || []).push(s);
         }
       }
-      for (let i = 0; i < n; i++) { const D = CELLS[cells[i].type]; if (D.needs) on[i] = alive[i] && !!gets[i][D.needs]; }
+      for (let i = 0; i < n; i++) { const D = CELLS[cells[i].type]; if (D.needs) on[i] = alive[i] && (!!gets[i][D.needs] || !!cells[i].locked); }
     }
     return { on, gets };
   }
   function why(cells, i, sig) {
     const D = CELLS[cells[i].type];
     if (!D.needs || sig.on[i]) return '';
+    if (cells[i].blocked && SIGNALS[D.needs].path === 'Gi') return 'Pertussis toxin blocked its G protein (Gi). Chemokine still binds the receptor, but the signal can\'t be relayed inside the cell.';
     const S = SIGNALS[D.needs];
     if (S.mode === 'juxtacrine') return `Needs ${S.name.toLowerCase()} by contact: it must share an edge with a cell that sends it.`;
     if (S.mode === 'paracrine') return `Needs ${S.name.toLowerCase()}: it must be within ${S.range} squares of a cell that sends it.`;
@@ -93,7 +100,7 @@
     cells.forEach(x => { x.hp = CELLS[x.type].hp; x.max = x.hp; x.cd = 0; x.dmgDone = 0; });
     const R = { level, cells, t: 0, germs: [], neuts: [], shots: [], tissue: level.tissue || 3, leaks: [], over: false, won: false,
       infl: 0, storm: false, stormTime: 0, quorumOn: false, quorumTime: 0, events: [], spawned: 0, nextId: 0,
-      stats: { killed: 0, tagged: 0, neutrophils: 0, lostCells: [], capsuleHits: 0, phagoHits: 0 } };
+      stats: { killed: 0, tagged: 0, neutrophils: 0, lostCells: [], capsuleHits: 0, phagoHits: 0, blocked: 0, locked: 0 } };
     R.waves = level.waves.map(w => ({ t: w[0], c: w[1], type: w[2] || 'bacterium' })).sort((a, b) => a.t - b.t);
     R.sig = signals(cells);
     R.startOn = R.sig.on.slice();
@@ -135,6 +142,20 @@
       if (R.quorumOn && !was) R.events.push({ k: 'quorum' });
     }
     const toxic = R.quorumOn ? 3 : 1;
+    // Toxins: cells within 1 square of a toxin bacterium are hit for the rest of the run.
+    for (const g of germs) {
+      const T = GERMS[g.type].toxin; if (!T || g.y < 0) continue;
+      R.cells.forEach((x, i) => {
+        if (x.hp <= 0 || x[T === 'pertussis' ? 'blocked' : 'locked']) return;
+        if (Math.max(Math.abs(x.c - g.c), Math.abs(x.r + 0.5 - g.y)) > 1.5) return;
+        if (T === 'pertussis' && !(CELLS[x.type].needs && SIGNALS[CELLS[x.type].needs].path === 'Gi')) return;
+        if (T === 'cholera' && !CELLS[x.type].boost) return;   // only cells with a Gs pathway (epinephrine receptor)
+        x[T === 'pertussis' ? 'blocked' : 'locked'] = true;
+        R.stats[T === 'pertussis' ? 'blocked' : 'locked']++;
+        R.events.push({ k: T === 'pertussis' ? 'blocked' : 'locked', i, type: x.type });
+        R.sig = signals(R.cells);
+      });
+    }
 
     // Bacteria move down, or stop and attack what's in their way.
     for (const g of germs) {
@@ -173,7 +194,7 @@
         const epi = R.sig.gets[i] && R.sig.gets[i].epinephrine;
         x.cd -= dt;
         if (x.cd <= 0) {
-          x.cd = NEUTROPHIL.every / (epi ? 2 : 1);
+          x.cd = NEUTROPHIL.every / (x.locked ? 3 : epi ? 2 : 1);
           R.neuts.push({ c: x.c, y: x.r + 0.3, hp: NEUTROPHIL.hp, age: 0, alive: true, from: i });
           R.stats.neutrophils++;
         }
@@ -203,8 +224,8 @@
     // Inflammation: it feeds on itself (positive feedback) and drains slowly.
     if (L.storm) {
       R.infl = Math.min(150, Math.max(0, R.infl * (1 + 0.012 * dt * 20 * (R.infl / 100)) - 2.5 * dt));
-      if (!R.storm && R.infl >= 100) { R.storm = true; R.events.push({ k: 'storm' }); }
-      if (R.storm && R.infl < 55) { R.storm = false; R.events.push({ k: 'calm' }); }
+      if (!R.storm && R.infl >= (L.stormAt || 100)) { R.storm = true; R.events.push({ k: 'storm' }); }
+      if (R.storm && R.infl < (L.stormAt || 100) * 0.55) { R.storm = false; R.events.push({ k: 'calm' }); }
       if (R.storm) R.stormTime += dt;
       R.peak = Math.max(R.peak || 0, R.infl);
     }
@@ -225,6 +246,7 @@
       // The third star is the level's lesson: spend wisely, or keep quorum or storm from ever happening.
       if (level.star3 === 'noQuorum') { if (!R.quorumTime) s++; }
       else if (level.star3 === 'noStorm') { if (!R.stormTime) s++; }
+      else if (level.star3 === 'noToxin') { if (!R.stats.blocked && !R.stats.locked) s++; }
       else if (cost(level, placed) <= level.par) s++;
     }
     return s;
@@ -238,6 +260,8 @@
   /* ---------- What happened, in plain biology ---------- */
   function explain(R) {
     const out = [], L = R.level, cells = R.cells;
+    if (R.stats.blocked) out.push({ bad: true, text: `Pertussis toxin blocked the Gi G protein in ${R.stats.blocked} of your cells. Chemokine still reached their receptors, but transduction failed, so there was no response.` });
+    if (R.stats.locked) out.push({ bad: true, text: `Cholera toxin locked the Gs G protein "on" in ${R.stats.locked} capillar${R.stats.locked > 1 ? 'ies' : 'y'}. They kept releasing neutrophils with no signal, and inflammation soared.` });
     const total = R.waves.length;
     if (R.won && !R.leaks.length) out.push({ text: `Your cells destroyed all ${total} bacteria before they reached your tissue.` });
     cells.forEach((x, i) => {
@@ -259,8 +283,11 @@
     function star3Text(level) {
     if (level.star3 === 'noQuorum') return `Never let ${level.quorum} bacteria gather`;
     if (level.star3 === 'noStorm') return 'No cytokine storm';
+    if (level.star3 === 'noToxin') return 'Keep the toxin away from every cell it can break';
     return `Spend ${level.par} ATP or less`;
   }
-  const API = { star3Text, COLS, ROWS, DT, SIGNALS, CELLS, GERMS, NEUTROPHIL, signals, why, createRun, step, simulate, stars, cost, explain, adjacent, near };
+  // What actually happened, in the same words as the prediction choices.
+  function outcome(R) { return !R.won ? 'lose' : R.leaks.length ? 'leak' : 'clean'; }
+  const API = { outcome, PATHS, star3Text, COLS, ROWS, DT, SIGNALS, CELLS, GERMS, NEUTROPHIL, signals, why, createRun, step, simulate, stars, cost, explain, adjacent, near };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.SiegeEngine = API;
 })(typeof window !== 'undefined' ? window : globalThis);
