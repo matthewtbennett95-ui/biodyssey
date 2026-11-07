@@ -9,19 +9,27 @@
   /* ================= Saved progress ================= */
   W.store.remove('base');   // the earlier raid version's save is no longer used
   const saved = W.store.get('camp', null) || {};
-  const camp = { stars: {}, layouts: {} };
+  const camp = { stars: {}, layouts: {}, predictions: {}, skip: !!saved.skip };
+  Object.keys(saved.predictions || {}).forEach(k => { if (LEVELS.some(L => L.id === k)) camp.predictions[k] = !!saved.predictions[k]; });
   LEVELS.forEach(L => {
     const s = (saved.stars || {})[L.id]; if (s) camp.stars[L.id] = Math.max(0, Math.min(3, s | 0));
     const lay = (saved.layouts || {})[L.id];
     if (Array.isArray(lay)) camp.layouts[L.id] = lay.filter(p => Array.isArray(p) && L.palette[p[0]] && isBuildable(L, p[1], p[2])).map(p => [p[0], p[1] | 0, p[2] | 0]);
   });
   function save() { W.store.set('camp', camp); }
-  const totalStars = () => LEVELS.reduce((s, L) => s + (camp.stars[L.id] || 0), 0);
+  const BOOT = LEVELS.filter(L => !L.kind), CASES = LEVELS.filter(L => L.kind === 'case');
+  const isCase = L => L.kind === 'case';
+  const starsIn = list => list.reduce((s, L) => s + (camp.stars[L.id] || 0), 0);
+  const totalStars = () => starsIn(LEVELS);
+  const GOAL_CASES = 4;
   function report() {
-    const all1 = LEVELS.every(L => (camp.stars[L.id] || 0) >= 1), all3 = LEVELS.every(L => camp.stars[L.id] === 3);
-    W.report({ goal: all1, stretch: all3, summary: `${totalStars()} of ${LEVELS.length * 3} stars` });
+    const solved = CASES.filter(L => (camp.stars[L.id] || 0) >= 1).length, all3 = CASES.every(L => camp.stars[L.id] === 3);
+    W.report({ goal: solved >= GOAL_CASES, stretch: all3, summary: `Boot camp ${starsIn(BOOT)}/${BOOT.length * 3} stars · cases solved ${solved}/${CASES.length}` });
   }
-  const unlocked = i => i === 0 || (camp.stars[LEVELS[i - 1].id] || 0) >= 1;
+  // Boot camp opens one level at a time. Cases open all at once, after boot camp (or if a student tests out).
+  const casesOpen = () => camp.skip || BOOT.every(L => (camp.stars[L.id] || 0) >= 1);
+  const unlocked = i => { const L = LEVELS[i]; if (isCase(L)) return casesOpen(); const k = BOOT.indexOf(L); return k === 0 || (camp.stars[BOOT[k - 1].id] || 0) >= 1; };
+  const numberOf = L => isCase(L) ? 'C' + (CASES.indexOf(L) + 1) : String(BOOT.indexOf(L) + 1);
   function isBuildable(L, c, r) { return L.map[r] && L.map[r][c] === '.' && !(L.fixed || []).some(f => f[1] === c && f[2] === r); }
 
   /* ================= Cell art (game pieces) ================= */
@@ -37,6 +45,24 @@
   };
   const art = (t, size) => `<svg viewBox="0 0 40 40" width="${size || 40}" height="${size || 40}" aria-hidden="true" focusable="false">${ART[t]}</svg>`;
 
+  /* ================= Notices: shown in the coach panel, never on top of the board ================= */
+  let notice = null, noticeTimer = null;
+  function say(msg, opt) {
+    opt = opt || {};
+    notice = { msg, opt };
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { notice = null; if (!$('play').hidden && L) renderCoach(); else renderCampNotice(); }, opt.ms || 6000);
+    if (!$('play').hidden && L) renderCoach(); else renderCampNotice();
+    return true;
+  }
+  B.onToast = say;
+  function noticeHtml() {
+    if (!notice) return '';
+    return `<div class="ss-notice ${notice.opt.kind || ''}">${icon(notice.opt.icon || 'info')}<span>${esc(notice.msg)}</span>${notice.opt.action ? `<button class="bd-btn secondary" type="button" id="noticeAct">${esc(notice.opt.action)}</button>` : ''}</div>`;
+  }
+  function wireNotice() { const b = $('noticeAct'); if (b) b.onclick = () => { const f = notice.opt.onAction; notice = null; renderCoach(); if (f) f(); }; }
+  function renderCampNotice() { const box = $('campNotice'); if (!box) return; box.innerHTML = noticeHtml(); box.hidden = !notice; wireNotice(); }
+
   /* ================= State ================= */
   let L = null, li = 0, placed = [], pick = null, selected = null, run = null, phase = 'plan', speed = 1, tut = 0, pausedFor = null, explained = {}, feed = [], lastStars = 0;
 
@@ -45,22 +71,28 @@
     const g = W.info.goals, p = W.progress();
     $('goals').innerHTML = `<li class="goal ${p.goal ? 'done' : ''}"><span class="bd-goal-ic">${icon('check')}</span><span><b>Goal</b><small>${esc(g.goal)}</small></span></li>
       <li class="stretch ${p.stretch ? 'done' : ''}"><span class="bd-goal-ic">${icon('star')}</span><span><b>Stretch goal</b><small>${esc(g.stretch)}</small></span></li>`;
-    $('campStars').textContent = `${totalStars()} of ${LEVELS.length * 3} stars`;
-    $('levels').innerHTML = LEVELS.map((L, i) => {
-      const st = camp.stars[L.id] || 0, open = unlocked(i);
-      return `<li><button class="ss-level" type="button" id="lvl-${L.id}" data-i="${i}" ${open ? '' : 'disabled'}>
-        <span class="ss-lvl-n">${i + 1}</span>
+    $('campStars').textContent = `${starsIn(BOOT)} of ${BOOT.length * 3} stars`;
+    $('caseStars').textContent = `${CASES.filter(L => camp.stars[L.id]).length} of ${CASES.length} solved`;
+    $('casesNote').textContent = casesOpen() ? 'Harder: read the case file, then predict before you run. Play them in any order.' : 'Finish boot camp to open the cases.';
+    $('skipBtn').hidden = casesOpen();
+    const card = (L) => {
+      const i = LEVELS.indexOf(L), st = camp.stars[L.id] || 0, open = unlocked(i);
+      return `<li><button class="ss-level${isCase(L) ? ' case' : ''}" type="button" id="lvl-${L.id}" data-i="${i}" ${open ? '' : 'disabled'}>
+        <span class="ss-lvl-n">${numberOf(L)}</span>
         <span class="ss-level-body"><b>${esc(L.title)}</b><small>${esc(L.topic)}</small></span>
         ${open ? `<span class="ss-stars" aria-label="${st} of 3 stars">${[0, 1, 2].map(k => `<i class="${k < st ? 'on' : ''}">${icon('star')}</i>`).join('')}</span>` : `<span class="ss-lock">${icon('lock')}</span>`}
       </button></li>`;
-    }).join('');
-    $('levels').querySelectorAll('[data-i]').forEach(b => b.onclick = () => openLevel(+b.dataset.i));
-    const next = LEVELS.findIndex((L, i) => unlocked(i) && !camp.stars[L.id]);
-    const ni = next >= 0 ? next : LEVELS.findIndex(L => camp.stars[L.id] < 3);
-    const target = ni >= 0 ? ni : 0;
-    $('continueBtn').innerHTML = `${totalStars() ? 'Continue' : 'Start'}: ${target + 1}. ${esc(LEVELS[target].title)}${icon('arrow-right')}`;
-    $('continueBtn').onclick = () => openLevel(target);
+    };
+    $('levels').innerHTML = BOOT.map(card).join('');
+    $('cases').innerHTML = CASES.map(card).join('');
+    document.querySelectorAll('#levels [data-i], #cases [data-i]').forEach(b => b.onclick = () => openLevel(+b.dataset.i));
+    const order = casesOpen() ? CASES.concat(BOOT) : BOOT;
+    const next = order.find(L => unlocked(LEVELS.indexOf(L)) && !camp.stars[L.id]) || order.find(L => (camp.stars[L.id] || 0) < 3) || BOOT[0];
+    $('continueBtn').innerHTML = `${totalStars() ? 'Continue' : 'Start'}: ${isCase(next) ? 'Case ' + numberOf(next).slice(1) : numberOf(next) + '.'} ${esc(next.title)}${icon('arrow-right')}`;
+    $('continueBtn').onclick = () => openLevel(LEVELS.indexOf(next));
   }
+
+  $('skipBtn').onclick = () => { camp.skip = true; save(); renderCamp(); say('Cases unlocked. Boot camp is still there if you need it.', { icon: 'check-circle', kind: 'good' }); };
 
   /* ================= Level screen ================= */
   function openLevel(i) {
@@ -68,7 +100,7 @@
     placed = (camp.layouts[L.id] || []).map(p => p.slice());
     pick = null; selected = null; run = null; phase = 'plan'; tut = 0; explained = {}; feed = []; pausedFor = null;
     $('camp').hidden = true; $('play').hidden = false;
-    $('lvlN').textContent = i + 1; $('lvlTitle').textContent = L.title; $('lvlTopic').textContent = L.topic;
+    $('lvlN').textContent = numberOf(L); $('lvlTitle').textContent = L.title; $('lvlTopic').textContent = L.topic;
     buildBoard(); layoutBoard(); renderAll(); window.scrollTo({ top: 0 });
     requestAnimationFrame(sizeFx);
   }
@@ -126,7 +158,8 @@
         html = `<span class="ss-art${live && live.hp <= 0 ? ' dead' : ''}">${art(x.type)}</span>` +
           (D.needs ? `<span class="ss-dot ${on ? 'on' : 'off'}" aria-hidden="true"></span>` : '') +
           (live && hp < 1 && hp > 0 ? `<span class="ss-hp"><i style="width:${Math.round(hp * 100)}%"></i></span>` : '') +
-          (x.fixed ? `<span class="ss-pin" aria-hidden="true">${icon('lock')}</span>` : '');
+          (x.fixed ? `<span class="ss-pin" aria-hidden="true">${icon('lock')}</span>` : '') +
+          (live && live.blocked ? '<span class="ss-tox block">Gi blocked</span>' : '') + (live && live.locked ? '<span class="ss-tox lock">Gs stuck on</span>' : '');
         label = `${D.name}${x.fixed ? ' (already placed)' : ''}${D.needs ? (on ? ', working' : ', not working') : ''}. ${label}`;
       } else if (r === 0 && inc[c] && phase === 'plan') {
         html = `<span class="ss-entry-tag">${icon('arrow-right')}${inc[c]}</span>`;
@@ -143,8 +176,8 @@
     if (phase !== 'plan') return;
     const x = cellAt(c, r);
     if (pick && !x && isBuildable(L, c, r)) {
-      if (left(pick) <= 0) { B.toast(`No more ${E.CELLS[pick].name.toLowerCase()}s for this level.`, { kind: 'warn', icon: 'alert' }); return; }
-      if (spent() + E.CELLS[pick].cost > L.budget) { B.toast('Not enough ATP for that.', { kind: 'warn', icon: 'alert' }); return; }
+      if (left(pick) <= 0) { say(`No more ${E.CELLS[pick].name.toLowerCase()}s for this level.`, { kind: 'warn', icon: 'alert', ms: 3500 }); return; }
+      if (spent() + E.CELLS[pick].cost > L.budget) { say('Not enough ATP for that. Remove a cell or pick a cheaper one.', { kind: 'warn', icon: 'alert', ms: 3500 }); return; }
       placed.push([pick, c, r]); selected = { c, r };
       if (left(pick) <= 0) pick = null;
       camp.layouts[L.id] = placed; save();
@@ -188,9 +221,30 @@
     if (!S) return '';
     return `<ol class="ss-steps${on ? '' : ' dim'}"><li><b>Reception</b>${esc(S.receptor)} binds ${esc(S.name.toLowerCase())}</li><li><b>Transduction</b>${esc(S.relay)}</li><li><b>Response</b>${esc(S.response)}</li></ol>`;
   }
+  // Which relay each of the cell's receptors uses: this is what toxins attack.
+  function pathways(type) {
+    const D = E.CELLS[type], list = [D.needs, D.boost].filter(Boolean);
+    if (!list.length) return '';
+    return `<p class="ss-paths">${list.map(k => `<span class="bd-chip line">${esc(E.SIGNALS[k].name)} → ${esc(E.PATHS[E.SIGNALS[k].path])}</span>`).join('')}</p>`;
+  }
+  const fileOpen = {};
+  function caseFile() {
+    if (fileOpen[L.id] === undefined) fileOpen[L.id] = !camp.layouts[L.id] || !camp.layouts[L.id].length;
+    const open = fileOpen[L.id];
+    return `<div class="ss-file"><button class="ss-file-head" type="button" id="caseToggle" aria-expanded="${open}"><span class="bd-label">Case file</span><span class="bd-small">${open ? 'Hide' : `Show the story and ${L.file.findings.length} findings`}</span>${icon('chevron-right')}</button>
+      ${open ? `<p>${esc(L.file.story)}</p><ul class="ss-findings">${L.file.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}</div>`;
+  }
   function renderCoach() {
     const box = $('coach');
-    if (phase === 'done') return renderResult();
+    if (phase === 'done') { renderResult(); $('coach').insertAdjacentHTML('afterbegin', noticeHtml()); wireNotice(); return; }
+    if (phase === 'predict') {
+      box.innerHTML = `<div class="bd-label">Before you run</div><p class="ss-say tut">Predict what will happen with your plan.</p>
+        <div class="ss-opts">${PREDICT.map(([k, t]) => `<button class="bd-btn secondary" type="button" id="pred-${k}" data-pred="${k}">${esc(t)}</button>`).join('')}</div>
+        <button class="bd-btn ghost" type="button" id="predBack">Back to my plan</button>`;
+      box.querySelectorAll('[data-pred]').forEach(b => b.onclick = () => startRun(b.dataset.pred));
+      $('predBack').onclick = () => { phase = 'plan'; renderAll(); };
+      return;
+    }
     if (phase === 'run') {
       const extra = [];
       if (L.storm) extra.push(meter('Inflammation', run.infl / 100, run.storm ? 'Cytokine storm!' : ''));
@@ -205,20 +259,22 @@
     const step = L.tutorial && L.tutorial[tut];
     let html = '';
     if (step) html += `<p class="ss-say tut"><span class="ss-step-n">Step ${tut + 1} of ${L.tutorial.length}</span>${esc(step.say)}</p>${step.waitFor ? '' : '<button class="bd-btn" type="button" id="tutNext">Next</button>'}`;
-    else html += `<p class="ss-say">${esc(L.brief)}</p>`;
+    else html += isCase(L) ? caseFile() : `<p class="ss-say">${esc(L.brief)}</p>`;
     if (selected) {
       const cells = allCells(), sig = E.signals(cells), i = cells.findIndex(x => x.c === selected.c && x.r === selected.r), x = cells[i];
       if (x) {
         const D = E.CELLS[x.type], on = sig.on[i];
         html += `<div class="ss-info"><div class="ss-info-head">${art(x.type, 28)}<b>${esc(D.name)}</b>${D.needs ? (on ? `<span class="bd-chip good">${icon('check')}Working</span>` : `<span class="bd-chip bad">${icon('alert')}Not working</span>`) : ''}</div>
-          <p>${esc(D.job)}</p>${!on && D.needs ? `<p class="ss-why">${esc(E.why(cells, i, sig))}</p>` : ''}${signalSteps(x.type, on)}
+          <p>${esc(D.job)}</p>${pathways(x.type)}${!on && D.needs ? `<p class="ss-why">${esc(E.why(cells, i, sig))}</p>` : ''}${signalSteps(x.type, on)}
           ${!x.fixed ? `<button class="bd-btn ghost" type="button" id="removeBtn">Remove</button>` : ''}</div>`;
       }
     } else if (!step) {
-      html += `<details class="ss-learn"><summary>The biology${icon('chevron-right')}</summary><p>${esc(L.learn)}</p></details>`;
+      if (!isCase(L)) html += `<details class="ss-learn"><summary>The biology${icon('chevron-right')}</summary><p>${esc(L.learn)}</p></details>`;
       if (pick && E.CELLS[pick].needs) html += `<p class="bd-help">Green squares are where it would receive its signal.</p>`;
     }
-    box.innerHTML = html;
+    box.innerHTML = noticeHtml() + html;
+    wireNotice();
+    if ($('caseToggle')) $('caseToggle').onclick = () => { fileOpen[L.id] = !fileOpen[L.id]; renderCoach(); };
     if ($('removeBtn')) $('removeBtn').onclick = removeSelected;
     if ($('tutNext')) $('tutNext').onclick = () => { tut++; renderAll(); };
   }
@@ -253,8 +309,11 @@
     storm: 'Cytokine storm! Inflammation fed on itself (positive feedback) and is now damaging your own cells.',
     calm: 'Inflammation is back down. IL-10 and time brought it under control (negative feedback).',
     leak: 'A bacterium reached your tissue. Nothing in that lane stopped it.',
-    lost: 'One of your cells was destroyed. If it was sending a signal, the cells relying on it just switched off.'
+    lost: 'One of your cells was destroyed. If it was sending a signal, the cells relying on it just switched off.',
+    blocked: 'Pertussis toxin reached a capillary and disabled its Gi G protein. Chemokine still binds, but the signal can\'t be relayed, so it stopped responding.',
+    locked: 'Cholera toxin locked a capillary\'s Gs G protein "on". It will keep releasing neutrophils with no signal at all, and inflammation will climb.'
   };
+  const PREDICT = [['clean', 'All bacteria stopped, none reach my tissue'], ['leak', 'I win, but some bacteria get through'], ['lose', 'The infection wins']];
   function note(key, bad) {
     if (explained[key]) return;
     explained[key] = true;
@@ -265,11 +324,16 @@
     if (phase === 'done') { resetToPlan(); return; }
     if (phase !== 'plan') return;
     tutorialEvent('run');
+    if (isCase(L)) { phase = 'predict'; pick = null; selected = null; renderAll(); return; }
+    startRun(null);
+  };
+  function startRun(prediction) {
+    if (isCase(L)) fileOpen[L.id] = false;
     phase = 'run'; pick = null; selected = null; feed = []; explained = {}; pausedFor = null;
-    run = E.createRun(L, placed);
+    run = E.createRun(L, placed); run.prediction = prediction;
     fxParts = [];
     renderAll();
-  };
+  }
   function stopRun() { run = null; phase = 'plan'; }
   function resetToPlan() { stopRun(); pausedFor = null; renderAll(); }
 
@@ -289,6 +353,7 @@
           if (e.k === 'calm') note('calm');
           if (e.k === 'lost') { note('lost', true); changed = true; }
           if (e.k === 'switchedOff') changed = true;
+          if (e.k === 'blocked' || e.k === 'locked') { note(e.k, true); changed = true; }
           if (e.k === 'end') { finishRun(); }
         }
         run.events.length = 0;
@@ -350,9 +415,10 @@
       const len = geo.tw * (small ? 0.3 : 0.42), wid = geo.tw * (small ? 0.07 : 0.1);
       const wob = reduceMotion ? 0 : Math.sin(t / 140 + g.id) * 2;
       if (G.capsule && !(g.tag > 0)) { ctx.fillStyle = 'rgba(14,116,144,.18)'; ctx.strokeStyle = 'rgba(14,116,144,.6)'; ctx.lineWidth = 1.5; roundRect(x - wid - 5, y - len / 2 - 5, wid * 2 + 10, len + 10, wid + 5); ctx.fill(); ctx.stroke(); }
+      if (G.toxin) { ctx.fillStyle = G.toxin === 'pertussis' ? 'rgba(147,51,234,.16)' : 'rgba(234,88,12,.16)'; ctx.beginPath(); ctx.arc(x, y, geo.tw * 0.75, 0, Math.PI * 2); ctx.fill(); }
       if (run.quorumOn) { ctx.fillStyle = 'rgba(234,88,12,.25)'; ctx.beginPath(); ctx.arc(x, y, len * 0.9, 0, Math.PI * 2); ctx.fill(); }
       ctx.strokeStyle = '#3f6212'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x, y - len / 2); ctx.quadraticCurveTo(x + wob * 2, y - len / 2 - 6, x - wob, y - len / 2 - 10); ctx.stroke();
-      ctx.fillStyle = g.hit > 0.06 ? '#fef9c3' : (g.tag > 0 ? '#a5b4fc' : (small ? '#bef264' : '#84cc16')); ctx.strokeStyle = '#3f6212'; ctx.lineWidth = 1.5;
+      ctx.fillStyle = g.hit > 0.06 ? '#fef9c3' : (g.tag > 0 ? '#a5b4fc' : G.toxin === 'pertussis' ? '#d8b4fe' : G.toxin === 'cholera' ? '#fdba74' : (small ? '#bef264' : '#84cc16')); ctx.strokeStyle = '#3f6212'; ctx.lineWidth = 1.5;
       roundRect(x - wid, y - len / 2, wid * 2, len, wid); ctx.fill(); ctx.stroke();
       if (g.tag > 0) { ctx.strokeStyle = '#1d4ed8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + wid, y); ctx.lineTo(x + wid + 4, y - 3); ctx.moveTo(x + wid + 4, y - 3); ctx.lineTo(x + wid + 7, y - 6); ctx.moveTo(x + wid + 4, y - 3); ctx.lineTo(x + wid + 7, y); ctx.stroke(); }
       if (g.hp < g.max) { const w = geo.tw * 0.4; ctx.fillStyle = 'rgba(15,23,42,.5)'; ctx.fillRect(x - w / 2, y - len / 2 - 8, w, 3); ctx.fillStyle = '#e11d48'; ctx.fillRect(x - w / 2, y - len / 2 - 8, w * Math.max(0, g.hp / g.max), 3); }
@@ -393,21 +459,25 @@
     lastStars = E.stars(run, L, placed);
     const prev = camp.stars[L.id] || 0;
     if (lastStars > prev) camp.stars[L.id] = lastStars;
+    if (run.prediction) camp.predictions[L.id] = run.prediction === E.outcome(run);
     camp.layouts[L.id] = placed; save(); report();
     renderAll();
   }
   function renderResult() {
-    const s = lastStars, lines = E.explain(run), next = li + 1 < LEVELS.length ? li + 1 : -1;
+    const s = lastStars, lines = E.explain(run), next = li + 1 < LEVELS.length && unlocked(li + 1) ? li + 1 : -1;
+    const P = run.prediction ? PREDICT.find(p => p[0] === run.prediction) : null, right = P && run.prediction === E.outcome(run);
     const conditions = [['Stop the infection', run.won], ['No bacteria reach your tissue', run.won && !run.leaks.length], [E.star3Text(L), s === 3]];
     const order = L.q.opts.map((o, i) => i).sort((a, b) => ((a * 7 + li * 3) % 5) - ((b * 7 + li * 3) % 5));
     $('coach').innerHTML = `<div class="ss-result">
       <div class="ss-res-stars" aria-label="${s} of 3 stars">${[0, 1, 2].map(k => `<i class="${k < s ? 'on' : ''}" style="animation-delay:${k * 0.15}s">${icon('star')}</i>`).join('')}</div>
       <b class="ss-res-title">${s ? (s === 3 ? 'Perfect!' : 'Infection stopped') : 'The infection got through'}</b>
       <ul class="ss-conds">${conditions.map(([t, ok]) => `<li class="${ok ? 'ok' : ''}">${icon(ok ? 'check-circle' : 'x')}${esc(t)}</li>`).join('')}</ul>
+      ${P ? `<p class="ss-pred ${right ? 'ok' : ''}">${icon(right ? 'check-circle' : 'info')}<span>You predicted: <b>${esc(P[1].toLowerCase())}</b>. ${right ? 'Correct!' : 'Not this time. Look at what happened below and see what your model of the system missed.'}</span></p>` : ''}
       <div class="bd-label">What happened</div>
-      <ul class="ss-feed">${lines.slice(0, 3).map(l => `<li class="${l.bad ? 'bad' : ''}">${esc(l.text)}</li>`).join('')}</ul>
+      <ul class="ss-feed">${lines.slice(0, 4).map(l => `<li class="${l.bad ? 'bad' : ''}">${esc(l.text)}</li>`).join('')}</ul>
+      ${isCase(L) ? `<details class="ss-learn"><summary>The biology${icon('chevron-right')}</summary><p>${esc(L.learn)}</p></details>` : ''}
       ${s ? `<div class="ss-check"><div class="bd-label">Quick check</div><p><b>${esc(L.q.q)}</b></p><div class="ss-opts">${order.map(i => `<button class="bd-btn secondary" type="button" data-opt="${i}" id="opt-${i}">${esc(L.q.opts[i])}</button>`).join('')}</div><p class="bd-help" id="why" hidden></p></div>` : ''}
-      <div class="bd-actions">${s && next >= 0 ? `<button class="bd-btn lg" type="button" id="nextBtn">Next level${icon('arrow-right')}</button><button class="bd-btn secondary" type="button" id="againBtn">Try again</button>`
+      <div class="bd-actions">${s && next >= 0 ? `<button class="bd-btn lg" type="button" id="nextBtn">${isCase(LEVELS[next]) ? 'Next case' : 'Next level'}${icon('arrow-right')}</button><button class="bd-btn secondary" type="button" id="againBtn">Try again</button>`
         : `<button class="bd-btn lg" type="button" id="againBtn">${s ? 'Try for 3 stars' : 'Change my plan'}</button>${s ? '<button class="bd-btn secondary" type="button" id="campBtn">All levels</button>' : ''}`}</div></div>`;
     $('coach').querySelectorAll('[data-opt]').forEach(b => b.onclick = () => {
       const right = +b.dataset.opt === 0;
@@ -426,19 +496,22 @@
     $('runBtn').hidden = phase !== 'plan';
     $('speedBtn').hidden = phase !== 'run';
     $('speedBtn').textContent = speed === 1 ? 'Speed: 1×' : 'Speed: 2×';
-    $('runRow').hidden = phase === 'done';
+    $('runRow').hidden = phase === 'done' || phase === 'predict';
     $('clearBtn').textContent = phase === 'plan' ? 'Clear' : 'Stop';
     $('clearBtn').hidden = phase === 'plan' && !placed.length;
   }
 
   /* ================= Printing ================= */
-  $('printCamp').onclick = () => W.print('Signal Siege boot camp', `
-    <h2>My levels</h2>
-    <table><tr><th>Level</th><th>Biology</th><th>Stars</th></tr>${LEVELS.map((L, i) => `<tr><td>${i + 1}. ${esc(L.title)}</td><td>${esc(L.topic)}</td><td>${camp.stars[L.id] || 0} of 3</td></tr>`).join('')}</table>
-    <p><b>Total:</b> ${totalStars()} of ${LEVELS.length * 3} stars</p>
-    <h2>What each level taught</h2><ul>${LEVELS.map(L => `<li><b>${esc(L.topic)}:</b> ${esc(L.learn)}</li>`).join('')}</ul>
-    <h2>Reflection</h2><p><b>Pick one signal from the game. Describe its reception, transduction and response, and say whether it is juxtacrine, paracrine or endocrine.</b></p>
-    <div class="lines"></div><div class="lines"></div><div class="lines"></div><div class="lines"></div>`);
+  $('printCamp').onclick = () => {
+    const row = L => `<tr><td>${esc(numberOf(L))}. ${esc(L.title)}</td><td>${esc(L.topic)}</td><td>${camp.stars[L.id] || 0} of 3</td>${isCase(L) ? `<td>${L.id in camp.predictions ? (camp.predictions[L.id] ? 'Correct' : 'Incorrect') : '–'}</td>` : ''}</tr>`;
+    const preds = Object.values(camp.predictions);
+    W.print('Signal Siege results', `
+      <h2>Boot camp</h2><table><tr><th>Level</th><th>Biology</th><th>Stars</th></tr>${BOOT.map(row).join('')}</table>
+      <h2>Cases</h2><table><tr><th>Case</th><th>Biology</th><th>Stars</th><th>Last prediction</th></tr>${CASES.map(row).join('')}</table>
+      <p><b>Cases solved:</b> ${CASES.filter(L => camp.stars[L.id]).length} of ${CASES.length}. <b>Correct predictions:</b> ${preds.filter(Boolean).length} of ${preds.length}.</p>
+      <h2>Reflection</h2><p><b>Pick one case. Which component of a signal transduction pathway did the toxin (or the infection) affect, and how did that change the cell's response? Use the words reception, transduction and response.</b></p>
+      <div class="lines"></div><div class="lines"></div><div class="lines"></div><div class="lines"></div><div class="lines"></div>`);
+  };
 
   renderCamp(); report();
   requestAnimationFrame(loop);

@@ -49,7 +49,7 @@ A **Teacher guide** page: the worlds with time, topics, standards and goals, a *
 ### 7. The worlds
 | AP unit | World | Status |
 | --- | --- | --- |
-| 4. Cell Communication and Cell Cycle | **Signal Siege** (signaling, quorum sensing, feedback) | Live (boot camp, session 3) |
+| 4. Cell Communication and Cell Cycle | **Signal Siege** (signaling, transduction, toxins, feedback) | Live (boot camp + cases, session 4) |
 | 6. Gene Expression and Regulation | **Codon Rush** (replication, transcription, translation) | Live |
 | 8. Ecology (with Unit 7) | **Symbio** (the evolution of cooperation) | Live |
 
@@ -92,12 +92,34 @@ You place immune cells on a 5 × 7 board, press **Run**, and bacteria come down 
 
 An empty board loses every level. Levels 4 and 5 have very few answers, so their briefs give a hint, and the dots and signal lines show the chain working as you build it. The goal needs each level understood once. The stretch needs the efficient, lesson-perfect plan on all eight.
 
+### Signal Siege cases (session 4)
+*The owner found boot camp too elementary ([focus group 4](focus-groups/04-signal-siege-depth.md)).* Boot camp stays as training. Six **cases** follow, playable in any order: case files instead of tips, toxins that break signal transduction (pertussis toxin disables Gi; cholera toxin locks Gs on), a prediction before every run, and tight budgets. AP students can test out of boot camp. **Goal:** solve 4 of the 6 cases. **Stretch:** 3 stars on all 6 cases.
+
+| Case | Random layouts that win | Best plan found | One piece of it moved: still wins |
+| --- | --- | --- | --- |
+| The cough that won't stop (pertussis) | 1.6% | 3★, 130 ATP | 10% |
+| Stuck on (cholera + storm) | 5.3% | 3★, 210 ATP | 55% |
+| Slippery and crowded (capsules + quorum) | 0% | 3★, 320 ATP | 4% |
+| Two fronts (resources) | 0.3% | 3★, 220 ATP | 16% |
+| Sepsis (storm at 70) | 0.3% | 3★, 270 ATP | 32% |
+| The unknown patient (diagnosis) | 0% | 3★, 300 ATP | 7% |
+
+Luck doesn't solve cases; reasoning from the case file does. Three cases have small families of answers, so the goal asks for 4 of 6. The stretch (18 case stars) needs every case understood and optimized.
+
 ### Open questions for next time
-- Signal Siege: missions after boot camp (viruses and killer T cells; cholera and pertussis toxins for Topic 4.4)? A free-build sandbox? A real class playtest.
+- Signal Siege: a real class playtest of the cases. Lighter case files for regular Biology? Viruses and killer T cells as a later case?
 - Which worlds come next for AP Units 1, 2, 3, 5 and 7?
 - Should the old Symbio site link to Biodyssey (a "Symbio has moved" banner)?
 
 ## Content check log
+**Round 4 (November 7, 2026): Signal Siege cases.**
+- *Pertussis toxin* ADP-ribosylates the α subunit of Gi, uncoupling it from its receptors. Chemokine receptors (such as CXCR1/2 on neutrophils) signal through Gi, which is why pertussis toxin blocks chemokine-driven migration (Carbonetti 2010, *Future Microbiol.*). Whooping cough is caused by *Bordetella pertussis*.
+- *Cholera toxin* ADP-ribosylates Gsα and blocks its GTPase, so Gs stays active and cAMP stays high (Sánchez and Holmgren 2011, *Indian J. Med. Res.*). β2-adrenergic (epinephrine) receptors couple to Gs. In the gut this drives fluid loss; the game states that its "capillaries release neutrophils nonstop" is a stand-in for a response that can't switch off. Cholera is an AP Topic 4.4 example of a disrupted pathway.
+- *Encapsulated pneumonia bacteria* (*Streptococcus pneumoniae*) resist phagocytosis unless opsonized (Janeway's *Immunobiology*). The quorum threshold is a game number.
+- *Sepsis* as a dysregulated host response (Singer et al. 2016, *JAMA*, Sepsis-3); IL-10 as negative feedback (Saraiva and O'Garra 2010).
+- *Case files:* fictional patients, no names. A 15-year-old patient is appropriate for the audience. No graphic symptoms.
+- *Prediction* before testing matches the AP science practice of making and justifying predictions.
+
 **Round 3 (November 6, 2026): Signal Siege boot camp.** Carries over the round 2 sources (quorum sensing, contact signaling between immune cells, opsonization, chemokines, IL-10 and cytokine storms). New in this round:
 - *Epinephrine (endocrine):* catecholamines rapidly raise circulating neutrophils by releasing cells marginated along vessel walls (Benschop, Rodriguez-Feuerhahn and Schedlowski 1996, *Brain Behav. Immun.*). The game shows this as "twice as many neutrophils released" at every capillary. Epinephrine acting through a G protein-coupled receptor and cAMP is the classic AP Topic 4.3 example.
 - *Reception → transduction → response* text for each signal: chemokine receptors are G protein-coupled (CXCR1/2); T cell receptor signaling runs through a kinase cascade; CD40 on B cells is activated by CD40L on helper T cells; the IL-10 receptor signals through JAK/STAT kinases.

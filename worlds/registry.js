@@ -35,19 +35,20 @@ window.BIODYSSEY_WORLDS = [
     id: 'signal-siege', unit: 4, status: 'open',
     title: 'Signal Siege', art: '🦠', tint: '#fff1f2',
     goal: 'Place immune cells, press Run, and see how cells signal each other.',
-    path: 'worlds/signal-siege/index.html', time: '1 class period',
+    path: 'worlds/signal-siege/index.html', time: '1–2 class periods',
     goals: {
-      goal: 'Finish boot camp: earn at least one star on all 8 levels',
-      stretch: 'Earn all 24 stars'
+      goal: 'Solve 4 of the 6 cases (at least one star each)',
+      stretch: 'Earn 3 stars on all 6 cases'
     },
     prompts: [
       'Pick one signal from the game. Describe it as reception, transduction and response: which cell sends it, which receives it, and what changes?',
       'Explain juxtacrine, paracrine and endocrine signaling, with one example of each from the game.',
       'How do bacteria use quorum sensing? Why did it matter how many bacteria were on the board at once?',
-      'Give one example of positive feedback and one of negative feedback from the cytokine storm level.'
+      'Give one example of positive feedback and one of negative feedback from the cytokine storm level.',
+      'Pertussis toxin disables Gi; cholera toxin locks Gs on. For each, which step of the pathway broke, and how did the cell\'s response change?'
     ],
     topics: 'Cell communication, signal transduction, quorum sensing, feedback, immune defense',
-    standards: ['AP Biology 4.1–4.3, 4.5', 'NGSS HS-LS1-2', 'NGSS HS-LS1-3']
+    standards: ['AP Biology 4.1–4.5', 'NGSS HS-LS1-2', 'NGSS HS-LS1-3']
   },
   {
     id: 'symbio', unit: 8, status: 'open',

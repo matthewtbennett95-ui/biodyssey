@@ -158,3 +158,34 @@
   .ss-piece .mono { margin-left: auto; padding-right: 18px; }
   .ss-steps { grid-template-columns: 1fr; }
 }
+
+/* ----- Cases ----- */
+.ss-skip { margin-top: var(--s3); }
+.ss-cases-head { margin-top: var(--s6); }
+.ss-cases-note { margin: -4px 0 var(--s3); }
+.ss-level.case .ss-lvl-n { background: var(--bd-ink); color: #fff; font-size: 13px; }
+.ss-level.case:disabled .ss-lvl-n { background: var(--bd-soft-2); color: var(--bd-faint); }
+.ss-file { display: flex; flex-direction: column; gap: var(--s2); }
+.ss-file p { font-size: 14px; }
+.ss-findings { margin: 0; padding: var(--s3) var(--s3) var(--s3) 30px; background: var(--bd-soft); border: 1px solid var(--bd-line); border-radius: 12px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.ss-paths { display: flex; flex-wrap: wrap; gap: 6px; }
+.ss-paths .bd-chip { height: 24px; font-size: 12px; font-weight: 600; }
+.ss-tox { position: absolute; left: 50%; bottom: 3px; transform: translateX(-50%); white-space: nowrap; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px; }
+.ss-tox.block { background: #f3e8ff; color: #7e22ce; }
+.ss-tox.lock { background: #ffedd5; color: #c2410c; }
+.ss-pred { display: flex; gap: var(--s2); align-items: flex-start; font-size: 14px; padding: var(--s2) var(--s3); border-radius: 12px; background: var(--bd-soft-2); }
+.ss-pred .bd-ic { flex: none; margin-top: 2px; }
+.ss-pred.ok { background: var(--bd-good-50); color: var(--bd-good-ink); }
+
+/* Notices live in the page flow, never over the board. */
+.ss-notice { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s3); border-radius: 12px; background: var(--bd-soft-2); font-size: 14px; animation: bd-rise .18s var(--ease); }
+.ss-notice > span { flex: 1; }
+.ss-notice .bd-ic { flex: none; }
+.ss-notice.good { background: var(--bd-good-50); color: var(--bd-good-ink); }
+.ss-notice.warn { background: var(--bd-warn-50); color: var(--bd-warn-ink); }
+.ss-notice .bd-btn { min-height: 36px; padding: 0 var(--s3); font-size: 13px; }
+.ss-campnotice { margin-bottom: var(--s4); }
+.ss-file-head { display: flex; align-items: center; gap: var(--s2); width: 100%; background: none; border: 0; padding: 0; min-height: 32px; cursor: pointer; text-align: left; color: inherit; }
+.ss-file-head .bd-small { margin-left: auto; }
+.ss-file-head .bd-ic { color: var(--bd-muted); transition: transform .2s var(--ease); }
+.ss-file-head[aria-expanded="true"] .bd-ic { transform: rotate(90deg); }
